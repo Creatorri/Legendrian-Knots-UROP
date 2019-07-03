@@ -6,8 +6,7 @@ module Main
     ) where
 import Augmentations
 import Algebra
-import Braid.Braid
-import Braid.WordProblem
+import Braid
 import Braid.GenBraid
 import Control.Monad.Random
 import qualified System.IO
@@ -15,13 +14,13 @@ import qualified Data.List
 
 pincher b = do{ k <- evalRandIO $ liftRand (randomR (1,length $ word b))
               ; cont <- getLine
-              ; let b' = Braid (width b) $ freeReduce $ word $ pinch k b
+              ; let b' = Braid (width b) $ word $ pinch k b
               ; if cont == "" then print b' else return ()
               ; if cont == "" then print k else return ()
               ; if cont == "" then pincher b' else return ()
               }
 
-b0 = torus_braid 5 3
+b0 = genTorusBraid 5 3
 alphabet = legendrian_alphabet b0
 b1 = torus_pinch 1 1
 m1 = DGA_Map [('A',Expression [Monomial 1 "\564"]),('E',Expression [Monomial 1 "E",Monomial 1 "\565B"]),('F',Expression [Monomial 1 "F",Monomial 1 "\565C"]),('G',Expression [Monomial 1 "G", Monomial 1 "\565D"]),('H',Expression [Monomial 1 "H",Monomial 1 "\565"])]
@@ -36,7 +35,7 @@ map3 = (applyDGAMap m3) . map2
 printMap :: (Expression->Expression) -> Braid -> IO ()
 printMap map' b = mapM_ putStrLn $ map (\(a,b')-> (show a) ++ " ↦ " ++ (show $ inZp 2 $ map' b')) $ map (\x -> (x,Expression [Monomial 1 [x]])) $ legendrian_alphabet b
 
-test = do { b <- evalRandIO $ random_pos_braid 5 12
+test = do { b <- evalRandIO $ genRandPosBraid 5 12
           ; let alph = legendrian_alphabet b
           ; putStrLn $ show b
           ; putStrLn alph
@@ -44,7 +43,7 @@ test = do { b <- evalRandIO $ random_pos_braid 5 12
           }
 
 gen = mkStdGen 188392981793904098
-rb = (flip evalRand) gen $ random_pos_braid 5 12
+rb = (flip evalRand) gen $ genRandPosBraid 5 12
 ralph = legendrian_alphabet rb
 rdisk = Data.List.nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks rb c d) ralph) ralph
 rdisk' = Data.List.nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks2 rb c d) ralph) ralph

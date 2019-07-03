@@ -16,8 +16,7 @@ import Algebra
 import Data.List
 import Data.Maybe
 import Control.Monad
-import Braid.Braid
-import Braid.WordProblem
+import Braid
 import Libs.List
 
 import Safe

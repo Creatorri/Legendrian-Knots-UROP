@@ -1,5 +1,5 @@
 module Braid
-    (Braid (Braid)
+    (Braid (Braid,width,word)
     ) where
 
 data Braid = Braid {width :: Int,word :: [Int]} deriving Eq
