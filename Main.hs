@@ -46,7 +46,7 @@ gen = mkStdGen 188392981793904098
 rb = (flip evalRand) gen $ genRandPosBraid 5 12
 ralph = legendrian_alphabet rb
 rdisk = Data.List.nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks rb c d) ralph) ralph
-rdisk' = Data.List.nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks2 rb c d) ralph) ralph
+
 correct = (\l -> l ++ (map (\(Script_M p n) -> Script_M (reverse p) (reverse n)) l)) $
             [Script_M "AC" "B",Script_M "AD" ""
             ,Script_M "BD" "C",Script_M "BF" ""
@@ -60,14 +60,9 @@ correct = (\l -> l ++ (map (\(Script_M p n) -> Script_M (reverse p) (reverse n))
 
 test2 = do { putStrLn $ show rb
            ; putStrLn ralph
-           ; mapM_ (\(Script_M po ne) -> putStrLn $ po ++ " " ++ ne) rdisk
-           }
-
-test3 = do { putStrLn $ show rb
-           ; putStrLn ralph
-           ; mapM_ (\(Script_M po ne) -> putStrLn $ po ++ " " ++ if ne == "" then "-" else ne ++ (if Nothing == (Data.List.find (==(Script_M po ne)) correct) then " x" else " ✓")) rdisk'
-           ; putStrLn $ "Right: " ++ (show $ sum $ map (\(Script_M po ne) -> if Nothing == (Data.List.find (==(Script_M po ne)) correct) then 0 else 1) rdisk') ++ " of " ++ (show $ length correct)
-           ; putStrLn $ "Wrong: " ++ (show $ sum $ map (\(Script_M po ne) -> if Nothing == (Data.List.find (==(Script_M po ne)) correct) then 1 else 0) rdisk') ++ " of " ++ (show $ length rdisk')
+           ; mapM_ (\(Script_M po ne) -> putStrLn $ po ++ " " ++ if ne == "" then "-" else ne ++ (if Nothing == (Data.List.find (==(Script_M po ne)) correct) then " x" else " ✓")) rdisk
+           ; putStrLn $ "Right: " ++ (show $ sum $ map (\(Script_M po ne) -> if Nothing == (Data.List.find (==(Script_M po ne)) correct) then 0 else 1) rdisk) ++ " of " ++ (show $ length correct)
+           ; putStrLn $ "Wrong: " ++ (show $ sum $ map (\(Script_M po ne) -> if Nothing == (Data.List.find (==(Script_M po ne)) correct) then 1 else 0) rdisk) ++ " of " ++ (show $ length rdisk)
            }
 
 
