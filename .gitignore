@@ -1,4 +1,5 @@
 bin/
+*.swp
 dist
 dist-*
 cabal-dev

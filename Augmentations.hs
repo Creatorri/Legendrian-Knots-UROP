@@ -100,22 +100,34 @@ reversePath p i = case (lastofpath p) of Node c j _ -> Node c j rec
 
 getPaths :: Int -> Int -> [(Char,Int)] -> [Maybe Path]
 getPaths i j [] = if i == j then [Just $ End j] else [Nothing]
-getPaths i j ((c,k):cks) = case abs (k - i) of 1 -> (maygo) ++ (straight)
+getPaths i j ((c,k):cks) = case abs (k - i) of 1 -> (maybe [] id maygo) ++ (straight)
                                                0 -> [Nothing]
                                                _ -> straight
-    where maygo = maybe [] id $ do { (p,cks') <- si_path k i j cks
-                                   ; let ps   = getPaths k j cks'
-                                   ; let ps'  = map (\mp -> mp >>= (\p'-> return $ Node (c,k) k $ plusPath p p')) ps
-                                   ; return ps'
-                                   }
-          justgo = (\x l -> map (\p -> p >>= (Just . Node (c,k) x)) (getPaths x j l)) 
+    where maygo = do { let adjoin = (\(pat,cks') -> map (\mp -> mp >>= (\p'-> return $ Node (c,k) k $ plusPath pat p')) $ getPaths k j cks')
+                     ; pck <- si_path k i j cks
+                     ; let ps  = adjoin pck
+                     ; let bp  = catMaybes $ bump_path k [i] j cks
+                     ; let ps' = [] -- concat $ map adjoin bp
+                     ; return (ps ++ ps')
+                     }
           straight = map (\p -> p >>= (Just . Straight (c,k) i)) (getPaths i j cks)
 
 si_path :: Int -> Int -> Int -> [(Char,Int)] -> Maybe (Path,[(Char,Int)])
-si_path _x i j [] = if i==j then Just (End j,[]) else Nothing
-si_path x i j ((c,k):cks) = if k == i then Just (Node (c,k) x (End i),cks)
-                                      else if k == x then Nothing
-                                                     else (si_path x i j cks) >>= (\(p,cks') -> Just $ (Straight (c,k) i p,cks'))
+si_path x _i j [] = if x==j then Just (End j,[]) else Nothing
+si_path x i j ((c,k):cks)
+    | k == i = Just (Node (c,k) x (End i),cks)
+    | k == x = Nothing
+    | otherwise = (si_path x i j cks) >>= (\(p,cks') -> Just $ (Straight (c,k) i p,cks'))
+
+bump_path :: Int -> [Int] -> Int -> [(Char,Int)] -> [Maybe (Path,[(Char,Int)])]
+bump_path x _i j [] = if x == j then [Just (End j,[])] else [Nothing]
+bump_path x i j ((c,k):cks)
+    | k == x  = [Just (Node (c,k) (last i) (End j),cks)]
+    | k `elem` i = [Nothing]
+    | k == x' = (si_path x (head i) j ((c,k):cks)):(concat $ catMaybes $ map (\m -> m >>= (\(p,ck) -> return $ map (adj (Node (c,k) x' (End j))) $ bump_path x i j ck)) $ bump_path x' (x:i) j cks)
+    | otherwise = map (adj (Straight (c,k) x (End j))) $ bump_path x i j cks
+    where x' = if x > (head i) then x + 1 else x - 1
+          adj = (\p' m -> m >>= (\(p,cks') -> Just $ (plusPath p' p,cks')))
 
 getDisk :: Path -> Path -> (Char,Int) -> (Char,Int) -> Maybe Moduli_Disk
 getDisk p1 p2 (c1,i) (c2,j)
