@@ -10,7 +10,8 @@ import Braid
 import Braid.GenBraid
 import Control.Monad.Random
 import qualified System.IO
-import qualified Data.List
+import Data.List
+import Data.Maybe
 
 pincher b = do{ k <- evalRandIO $ liftRand (randomR (1,length $ word b))
               ; cont <- getLine
@@ -39,30 +40,31 @@ test = do { b <- evalRandIO $ genRandPosBraid 5 12
           ; let alph = legendrian_alphabet b
           ; putStrLn $ show b
           ; putStrLn alph
-          ; putStrLn $ show $ Data.List.nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks b c d) alph) alph
+          ; putStrLn $ show $ nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks b c d) alph) alph
           }
 
-gen = mkStdGen 188392981793904098
+gen = mkStdGen 248720348979284
 rb = (flip evalRand) gen $ genRandPosBraid 5 12
 ralph = legendrian_alphabet rb
-rdisk = Data.List.nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks rb c d) ralph) ralph
+rdisk = nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks rb c d) ralph) ralph
 
-correct = (\l -> l ++ (map (\(Script_M p n) -> Script_M (reverse p) (reverse n)) l)) $
-            [Script_M "AC" "B",Script_M "AD" ""
-            ,Script_M "BD" "C",Script_M "BF" ""
-            ,Script_M "CF" "D",Script_M "CI" "G",Script_M "CL" "JK"
-            ,Script_M "DI" "GF",Script_M "DI" "",Script_M "DL" "JKF"
-            ,Script_M "EH" ""
-            ,Script_M "FG" ""
-            ,Script_M "GL" "IJK",Script_M "GL" "I",Script_M "GL" "K"
-            ,Script_M "IJ" ""
-            ,Script_M "JK" ""]
+correct = nub $ (\l -> l ++ (map (\(Script_M p n) -> Script_M (reverse p) (reverse n)) l)) $
+            [Script_M "AD" "C",Script_M "AE" ""
+            ,Script_M "BH" "CEG",Script_M "BH" "DG",Script_M "BH" "CF",Script_M "BH" ""
+            ,Script_M "CE" "D",Script_M "CF" ""
+            ,Script_M "DF" "E",Script_M "DG" ""
+            ,Script_M "EG" "F",Script_M "EJ" "I"
+            ,Script_M "FJ" "IG"
+            ,Script_M "HK" ""
+            ,Script_M "JL" ""]
+rights = filter (\(Script_M po ne) -> Nothing /= (find (==(Script_M po ne)) correct)) rdisk
+lefts  = filter (\(Script_M po ne) -> Nothing == (find (==(Script_M po ne)) correct)) rdisk
 
 test2 = do { putStrLn $ show rb
            ; putStrLn ralph
-           ; mapM_ (\(Script_M po ne) -> putStrLn $ po ++ " " ++ if ne == "" then "-" else ne ++ (if Nothing == (Data.List.find (==(Script_M po ne)) correct) then " x" else " ✓")) rdisk
-           ; putStrLn $ "Right: " ++ (show $ sum $ map (\(Script_M po ne) -> if Nothing == (Data.List.find (==(Script_M po ne)) correct) then 0 else 1) rdisk) ++ " of " ++ (show $ length correct)
-           ; putStrLn $ "Wrong: " ++ (show $ sum $ map (\(Script_M po ne) -> if Nothing == (Data.List.find (==(Script_M po ne)) correct) then 1 else 0) rdisk) ++ " of " ++ (show $ length rdisk)
+           ; mapM_ (\(Script_M po ne) -> putStrLn $ po ++ " " ++ if ne == "" then "-" else ne ++ (if Nothing == (find (\(Script_M p' n') -> (p' == po) && (n' == ne)) correct) then " x" else " ✓")) rdisk
+           ; putStrLn $ "Right: " ++ (show $ length rights) ++ " of " ++ (show $ length correct)
+           ; putStrLn $ "Wrong: " ++ (show $ length lefts ) ++ " of " ++ (show $ length rdisk)
            }
 
 
