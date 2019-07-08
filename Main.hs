@@ -4,7 +4,9 @@ module Main
     ,test2
     ,main
     ) where
+
 import Augmentations
+import HolomorphicDisks
 import Algebra
 import Braid
 import Braid.GenBraid
@@ -43,22 +45,37 @@ test = do { b <- evalRandIO $ genRandPosBraid 5 12
           ; putStrLn $ show $ nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks b c d) alph) alph
           }
 
-gen = mkStdGen 248720348979284
+gen = mkStdGen 7649764563452548
 rb = (flip evalRand) gen $ genRandPosBraid 5 12
 ralph = legendrian_alphabet rb
 rdisk = nub $ concat $ filter (not . null) $ concat $ map (\c -> map (\d -> augdisks rb c d) ralph) ralph
 
 correct = nub $ (\l -> l ++ (map (\(Script_M p n) -> Script_M (reverse p) (reverse n)) l)) $
-            [Script_M "AD" "C",Script_M "AE" ""
-            ,Script_M "BH" "CEG",Script_M "BH" "DG",Script_M "BH" "CF",Script_M "BH" ""
-            ,Script_M "CE" "D",Script_M "CF" ""
+            [Script_M "AE" "BCD",Script_M "AE" "D",Script_M "AE" "B",Script_M "AF" "BC",Script_M "AF" ""
+            ,Script_M "BC" ""
+            ,Script_M "CD" ""
             ,Script_M "DF" "E",Script_M "DG" ""
-            ,Script_M "EG" "F",Script_M "EJ" "I"
-            ,Script_M "FJ" "IG"
-            ,Script_M "HK" ""
-            ,Script_M "JL" ""]
+            ,Script_M "EG" "F",Script_M "EH" ""
+            ,Script_M "FH" "G"
+            ,Script_M "HJ" "I",Script_M "HL" "K"
+            ,Script_M "IL" "KJ",Script_M "IL" ""
+            ,Script_M "JK" ""]
+
 rights = filter (\(Script_M po ne) -> Nothing /= (find (==(Script_M po ne)) correct)) rdisk
 lefts  = filter (\(Script_M po ne) -> Nothing == (find (==(Script_M po ne)) correct)) rdisk
+
+wild_fra :: [(Char,Int)]
+wild_fra = [('C',2),('D',3),('E',2),('F',3),('G',2)]
+wild_child = catMaybes $ getPaths 1 1 wild_fra
+wild_disks = nub $ catMaybes $ concat $ map (\p1 -> map (\p2 -> getDisk p1 p2 ('B',1) ('H',1)) wild_child) wild_child 
+print_wild = mapM_ print wild_child
+p1 = wild_child !! 0
+p2 = wild_child !! 1
+p3 = wild_child !! 2
+p4 = wild_child !! 3
+bh_disk a b = getDisk a b ('B',1) ('H',1)
+comp_disks = augdisks rb 'B' 'H'
+
 
 test2 = do { putStrLn $ show rb
            ; putStrLn ralph
