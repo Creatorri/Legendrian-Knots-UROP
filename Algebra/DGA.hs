@@ -9,7 +9,7 @@ import Algebra
 
 import Data.List
 
-data CE_DGA = CE_DGA {get_gens::[Char], to_cross::Char->Maybe Int, get_braid::Braid}
+data CE_DGA = CE_DGA {get_gens::[Char], to_cross::Char->Maybe Int, get_braid::AugBraid}
 
 data DGA_Map = DGA_Map [(Char,Expression)]
 
