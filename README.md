@@ -6,5 +6,7 @@ The other primary direction that this research may go is into how the algebraic 
 The goal of this UROP is to, firstly, catch me up to speed with state-of-the-art research in contact topology, so that — secondly — I can choose between the aforementioned two primary directions. In the first, the objective would be to obtain a generalization of the work from [2] to (k,n) torus knots. In the second, the objective would be to find the relation between the augmentation and MCS for a space like ℤ, ℂ, or Mn(ℤ2).
 ## References
 [1] John B. Etnyre, “Legendrian AND Transversal Knots”  arXiv:math/0306256v2 [math.SG] (2004)
+
 [2] Yu Pan, “Exact Lagrangian Fillings of Legendrian (2,n) Torus Links” arXiv:1607.03167 [math.SG] (2016)
+
 [3] Michael B. Henry, Dan Rutherford, “Equivalence Classes of Augmentations and Morse Complex Sequences of Legendrian Knots” arXiv:1407.7003 [math.SG] (2014)
