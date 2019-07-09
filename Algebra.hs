@@ -27,8 +27,10 @@ instance Show Monomial where
 instance Show Expression where
     show (Expression []) = ""
     show (Expression l)  =
-        (\(m:ms) -> (show m) ++ (case ms of [] -> ""
-                                            (Monomial c m'):ms' -> if c < 0 then "" else "+"
+        (\x -> if x == [] then "" else let m = head x
+                                           ms = tail x
+                                        in (show m) ++ (case ms of [] -> ""
+                                                                   (Monomial c m'):ms' -> if c < 0 then "" else "+"
                                 ) ++ (show $ Expression ms)) $ sumSort l
 
 cons' :: Monomial -> Expression -> Expression

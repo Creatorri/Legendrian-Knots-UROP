@@ -73,8 +73,8 @@ instance Braid AugBraid where
     cross_art b row (Right s) = cross_art (toStdBraid b) row (Identity s)
     cross_art _b row (Left (s,s1,s2)) = if (row - (abs $ s-1)*3) `elem` [0..3]
                         then Just $ (case ((row-(s-1)*3) `mod` 4) of 0 -> "---" ++ show s1 ++  "---"
-                                                                     1 -> "    "     ++       "    "
-                                                                     2 -> "    "     ++       "    "
+                                                                     1 -> "    " ++ "    " ++ "    "
+                                                                     2 -> "    " ++ "    " ++ "    "
                                                                      3 -> "---" ++ show s2 ++  "---")
                         else Nothing
 instance Eq AugBraid where
