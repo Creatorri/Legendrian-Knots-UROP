@@ -9,8 +9,6 @@ import Braid
 import Libs.List
 import Safe
 
-import Debug.Trace
-
 data Holomorphic_Disk = Script_M {pos::[Char],neg::[Char]} -- J-Holomorphic moduli disk with #pos + #neg points removed from the boundary
 instance Show Holomorphic_Disk where
     show (Script_M po ne) = "Disk_{" ++ po ++ "," ++ (if ne == "" then "-" else ne) ++ "}"
@@ -158,8 +156,8 @@ augmentationDisks b p q
           frah1 l = if l == [] then [] else if (fst $ fst $ head l) == p then frah2 (tail l) else frah1 (tail l)
           frah2 l = if l == [] then [] else if (fst $ fst $ head l) == q then [] else (head l):(frah2 (tail l))
           fra = frah1 foot'
-          paths = traceShow fra $ catMaybes $ getPaths pth qth fra
-          disks = traceShow paths $ nub $ catMaybes $ concat $ map (\p1 -> map (\p2 -> getDisk p1 p2 (p,pth) (q,qth)) paths) paths
+          paths = catMaybes $ getPaths pth qth fra
+          disks = nub $ catMaybes $ concat $ map (\p1 -> map (\p2 -> getDisk p1 p2 (p,pth) (q,qth)) paths) paths
 
 above :: Path -> Path -> Bool --p1 `above` p2: checks if p1 is strictly above p2
 above (End _) (End _) = True
