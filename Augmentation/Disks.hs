@@ -9,6 +9,8 @@ import Braid
 import Libs.List
 import Safe
 
+import Debug.Trace
+
 data Holomorphic_Disk = Script_M {pos::[Char],neg::[Char]} -- J-Holomorphic moduli disk with #pos + #neg points removed from the boundary
 instance Show Holomorphic_Disk where
     show (Script_M po ne) = "Disk_{" ++ po ++ "," ++ (if ne == "" then "-" else ne) ++ "}"
@@ -48,6 +50,11 @@ lastofpath (Straight c j (End i)) = Straight c j (End i)
 lastofpath (Node _ _ p) = lastofpath p
 lastofpath (Straight _ _ p) = lastofpath p
 
+endofpath :: Path -> Path
+endofpath (End i) = End i
+endofpath (Node _ _ p) = endofpath p
+endofpath (Straight _ _ p) = endofpath p
+
 initpath :: Path -> Path --initpath p: gets all but the last non-end element of p
 initpath (End i) = End i
 initpath (Node _ _ (End i)) = End i
@@ -74,23 +81,26 @@ getPaths i j (((c,k),b):cks) = if not b then straight
                                 else case abs (k - i) of 1 -> (ladder) ++ (bump) ++ (straight) --can change direction by laddering (si_path), bumping (bump_path), or just continue straight
                                                          0 -> [Nothing] --ran into a crossing of the same row with more fra left, so has to stop
                                                          _ -> straight --continue on
-    where ladder = (maybe [] id $ do 
-                   { pck <- si_path k i j cks
-                   ; let ps = adjoin k pck
-                   ; return ps
-                   })
+    where ladder = let lp = catMaybes $ si_path [k,i] j cks
+                    in concat $ map (\p -> adjoin (case (endofpath $ fst p) of End x -> x) p) lp
           bump = let bp = catMaybes $ bump_path k i j cks
                   in concat $ map (adjoin i) bp
           adjoin = (\x (pat,cks') -> map (\mp -> mp >>= (\p'-> return $ Node (c,k) k $ plusPath pat p')) $ getPaths x j cks')
           straight = map (\p -> p >>= (Just . Straight (c,k) [i])) (getPaths i j cks)
 
-si_path :: Int -> Int -> Int -> Braid_Fragment -> Maybe (Path,Braid_Fragment) --si_path x i j fra: tries to find a path in fra that climbs to row x, if it does, it returns the required path and the remaining braid fragment, otherwise it returns Nothing
-si_path _x _i _j [] = Nothing --Nothing found
-si_path x i j (((c,k),b):cks)
-    | not b = (si_path x i j cks) >>= (\(p,cks') -> Just (Straight (c,k) [i] p,cks'))
-    | k == i = Just (Node (c,k) x (End i),cks) --done
-    | k == x = Nothing --ran into crossing above
-    | otherwise = (si_path x i j cks) >>= (\(p,cks') -> Just (Straight (c,k) [i] p,cks')) --continue on
+si_path :: [Int] -> Int -> Braid_Fragment -> [Maybe (Path,Braid_Fragment)] --si_path x i j fra: tries to find a path in fra that climbs to row x, if it does, it returns the required path and the remaining braid fragment, otherwise it returns Nothing
+si_path _i _j [] = [Nothing]
+si_path [i] _ cs = [Just (End i,cs)]
+si_path i j (((c,k),b):cks)
+    | not b = straight
+    | k == last i = down 
+    | k `elem` i = [Nothing]
+    | k == x = straight ++ to_x
+    | otherwise = straight
+    where down = if (head i) == j && (2 == length i) then [Just (Node (c,k) (last $ init i) (End j),cks)] else map (\mp -> mp >>= (\(p,cs) -> Just (Node (c,k) (last $ init i) p, cs))) $ si_path (init i) j cks
+          straight = map (\p -> p >>= (\(a,b) -> Just (Straight (c,k) i a,b))) (si_path i j cks)
+          x = if (head i) > (last i) then (head i)+1 else (head i)-1
+          to_x = map (\p -> p >>= (\(a,b) -> Just (Node (c,k) x a,b))) (si_path (x:i) j cks)
 
 bump_path :: Int -> Int -> Int -> Braid_Fragment -> [Maybe (Path,Braid_Fragment)] --bump_path x i j fra: tries to find paths in fra that dip down to row x
 bump_path _ _ _ [] = [Nothing] --Nothing found
@@ -128,8 +138,8 @@ getDisk p1 p2 (c1,i) (c2,j)
           n2 = getNodes p2
           s1 = {-filter (\(s,_) -> not $ s `elem` n2) $-} getStraights p1
           s2 = {-filter (\(s,_) -> not $ s `elem` n1) $-} getStraights p2
-          aboves = map (fst . fst) $ filter (\((_,i),j) -> or $ map (\j' -> i == j'-1) j) s1 -- negative points adjacent to the upper straights
-          belows = map (fst . fst) $ filter (\((_,i),j) -> or $ map (\j' -> i == j'+1) j) s2 -- negative points adjacent to the lower straights
+          aboves = map (fst . fst) $ filter (\((_,i),j) -> i == (head j)-1 || i == (last j)-1) s1 -- negative points adjacent to the upper straights
+          belows = map (fst . fst) $ filter (\((_,i),j) -> i == (head j)+1 || i == (last j)+1) s2 -- negative points adjacent to the lower straights
           output = Just $ Script_M [c1,c2] $ belows ++ (reverse aboves)
 
 augmentationDisks :: Braid b => b -> Char -> Char -> [Holomorphic_Disk] --augmentationDisks b c1 c2: given a braid and a pair of crossing references, find all holomorphic disks with postive ends at c1 and c2
@@ -138,16 +148,18 @@ augmentationDisks b p q
     | p < q = disks
     | p > q = map (\(Script_M po ne) -> Script_M (reverse po) (reverse ne)) $ augmentationDisks b q p
     | otherwise = []
-    where arecross = and $ map (\x -> elem x $ map fst $ algebra_footprint $ toStdBraid b) [p,q]
-          footprint = algebra_footprint b
+    where footprint = algebra_footprint b
           pth = snd $ fromJust $ find (\(c,_) -> c == p) footprint
           qth = snd $ fromJust $ find (\(c,_) -> c == q) footprint
-          foot' = map (\x -> if x `elem` (algebra_footprint $ toStdBraid b) then (x,True) else (x,False)) footprint
+          foot' = zipWith (\c x -> (c,isCross b x)) footprint [0..((length footprint) -1)]
+          lookupt :: [(Char,Bool)]
+          lookupt = map (\((c,_),b) -> (c,b)) foot'
+          arecross = or $ map (maybe False id) [lookup p lookupt,lookup q lookupt]
           frah1 l = if l == [] then [] else if (fst $ fst $ head l) == p then frah2 (tail l) else frah1 (tail l)
           frah2 l = if l == [] then [] else if (fst $ fst $ head l) == q then [] else (head l):(frah2 (tail l))
           fra = frah1 foot'
-          paths = catMaybes $ getPaths pth qth fra
-          disks = nub $ catMaybes $ concat $ map (\p1 -> map (\p2 -> getDisk p1 p2 (p,pth) (q,qth)) paths) paths
+          paths = traceShow fra $ catMaybes $ getPaths pth qth fra
+          disks = traceShow paths $ nub $ catMaybes $ concat $ map (\p1 -> map (\p2 -> getDisk p1 p2 (p,pth) (q,qth)) paths) paths
 
 above :: Path -> Path -> Bool --p1 `above` p2: checks if p1 is strictly above p2
 above (End _) (End _) = True

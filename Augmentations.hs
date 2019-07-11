@@ -2,6 +2,7 @@ module Augmentations
     (pinch
     ,pinchMap
     ,pinchTree
+    ,leaves
     ,numAugmentations
     ) where
 
@@ -31,59 +32,67 @@ unusedh w ws s
     | otherwise = unusedh w ws (s+1)
     where (wm,wms) = unusedh (w-1) ws s
 
-pinch :: Int -> AugBraid -> AugBraid
-pinch x b = remove_unused $ pinchh x (get_word b) (get_width b) 581
+pinch :: Int -> AugBraid -> Maybe AugBraid
+pinch x b = (Just . remove_unused) =<< (pinchh x (get_word b) (get_width b) (newChars x b))
 
-pinchh :: Int -> [Either (Int,Char,Char) Int] -> Int -> Int -> AugBraid
-pinchh x [] w t = AugBraid w []
-pinchh x ((Left (i,c,cinv)):cs) w t = AugBraid w $ (Left (i,c,cinv)):(get_word $ pinchh x cs w $ foldr max t [fromEnum c,fromEnum cinv])
-pinchh 0 ((Right i):cs) w t = AugBraid w $ (Left (i,toEnum (t+1),toEnum (t+2))):cs
-pinchh x ((Right i):cs) w t = AugBraid w $ (Right i):(get_word $ pinchh (x-1) cs w t)
+pinchh :: Int -> [Either (Int,Char,Char) Int] -> Int -> Maybe (Char,Char) -> Maybe AugBraid
+pinchh _ [] _ _ = Nothing
+pinchh x ((Left (i,c,cinv)):cs) w t = (\b -> Just $ AugBraid w $ (Left (i,c,cinv)):(get_word b)) =<< (pinchh x cs w t)
+pinchh 0 ((Right i):cs) w t = (\(c,cinv) -> return $ AugBraid w $ (Left (i,c,cinv)):cs) =<< t
+pinchh x ((Right i):cs) w t = (\b -> Just $ AugBraid w $ (Right i):(get_word b)) =<< (pinchh (x-1) cs w t)
 
-ithcross :: Int -> AugBraid -> Char
+ithcross :: Int -> AugBraid -> Maybe Char
 ithcross i b = crossh i (get_word b) (algebra_footprint b)
 
+crossh _ [] _ = Nothing
 --crossh _ [] _ = '\1'
 crossh i w f = if (isRight (head w))
-                then if (i == 0) then fst $ head f
+                then if (i == 0) then Just $ fst $ head f
                                  else crossh (i-1) (tail w) (tail f)
                 else crossh i (tail w) (tail $ tail f)
 
-newChars :: Int -> AugBraid -> (Char,Char)
-newChars x b = charh x (get_word b) 581
+newChars :: Int -> AugBraid -> Maybe (Char,Char)
+newChars x b = charh x (get_word b) 4607
 
-charh x w t = if (isRight (head w))
-                then if x == 0 then (toEnum (t+1), toEnum (t+2))
-                               else charh (x-1) (tail w) t
-                else case (fromLeft (0,toEnum t,toEnum t) (head w)) of (_z,c,cinv) -> charh x (tail w) (foldr max t [fromEnum c,fromEnum cinv])
+charh _ [] _ = Nothing
+charh 0 ((Right _):_) t = Just (toEnum (t+1), toEnum (t+2))
+charh x ((Right _):cs) t = charh (x-1) cs (t+1)
+charh x ((Left _):cs) t = charh x cs (t+3)
+--charh x ((Left (_z,c,cinv)):cs) t = charh x cs ((+) 1 $ foldr max (t+1) [fromEnum c,fromEnum cinv])
 
-pinchMap :: Int -> AugBraid -> (DGA_Map, AugBraid)
-pinchMap _ (AugBraid 0 _) = (DGA_Map [], AugBraid 0 [])
+pinchMap :: Int -> AugBraid -> Maybe (DGA_Map, AugBraid)
+pinchMap _ (AugBraid 0 _) = Just (DGA_Map [], AugBraid 0 [])
 pinchMap _ (AugBraid _ []) = pinchMap 0 (AugBraid 0 [])
-pinchMap x b = (dmap, pinch x b)
-    where chars = algebra_footprint b
-          (c,cinv) = newChars x b
-          change = ithcross x b
-          cnegs = map (\(x,i) -> (x,if x == change
-            then [[c]]
-            else if i == 0 then [['\1']]
-                           else map neg $ augmentationDisks b change x)) chars
-          cexps = map (\(c,s) -> (c,sum $ map (\t -> if t == "\1"
-                                            then Expression []
-                                            else Expression [Monomial 1 t]) s)) cnegs
-          dmap = DGA_Map cexps
-            
+pinchMap x b = do
+    { let chars = algebra_footprint b
+    ; change <- ithcross x b
+    ; (c,cinv) <- newChars x b
+    ; let cnegs = catMaybes $ map (\(c0,i) -> if c0 == change
+            then Just $ (c0,[[c]])
+            else if i == 0 then Nothing
+                           else Just $ (c0,(++) [[c0]] $ map (\d -> cinv:(neg d)) $ augmentationDisks b change c0)) chars
+    ; let cexps = map (\(c,s) -> (c,sum $ map (\t -> Expression [Monomial 1 t]) s)) $ filter (\(_,s) -> s /= []) cnegs
+    ; let dmap = DGA_Map cexps
+    ; b' <- pinch x b
+    ; return $ (dmap, b')
+    }
+                
 pinchTree :: AugBraid -> Tree (DGA_Map, AugBraid)
 pinchTree (AugBraid 0 _) = nullTree
-pinchTree (AugBraid _ []) = pinchTree (AugBraid 0 [])
-pinchTree b = Node (DGA_Map [], b) (map (\x -> let (m',b') = pinchMap x b
-                                                   tree    = pinchTree b'
-                                                in Node (m',b') (subForest $ fmap (\(m'',b'') -> (compose_maps m' m'',b')) tree)) $ filter (\x -> nullTree /= (pinchTree $ snd $ pinchMap x b)) $ [0..(length $ get_word $ toStdBraid b)])
+pinchTree (AugBraid _ []) = nullTree
+pinchTree b = Node (DGA_Map [], b)
+        (foldl (\xs x -> (++) xs $ maybe [] (\l -> [l]) $ do
+            { (m1, b1) <- pinchMap (x-1) b
+            ; tree <- (\z -> if z == nullTree then Nothing else Just z) $ pinchTree b1
+            ; let forest = subForest $ fmap (\(m2,b2) -> (compose_maps m2 m1,b2)) tree
+            ; return $ Node (m1,b1) forest
+            }) [] [1..(length $ get_word $ toStdBraid b)])
+
 nullTree = Node (DGA_Map [],AugBraid 0 []) []
 
-numAugmentations :: AugBraid -> Integer
-numAugmentations b = genericLength $ nub $ numh $ pinchTree b
+leaves :: Tree a -> [a]
+leaves (Node a []) = [a]
+leaves (Node a as) = (concat $ map leaves as)
 
-numh :: Tree (DGA_Map,AugBraid) -> [DGA_Map]
-numh (Node (m,b) []) = [m]
-numh (Node _ t) = concat $ map numh t
+numAugmentations :: AugBraid -> Integer
+numAugmentations b = genericLength $ nub $ map (\(m,b') -> (map (applyDGAMap m) $ map (\(c,_) -> Expression [Monomial 1 [c]]) $ algebra_footprint b)) $ leaves $ pinchTree b

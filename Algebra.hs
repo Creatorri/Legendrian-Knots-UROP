@@ -8,7 +8,7 @@ module Algebra
 import Data.List
 import Data.Maybe
 
-data Monomial = Monomial Integer String deriving Eq
+data Monomial = Monomial Integer String
 newtype Expression = Expression [Monomial]
 type UExp = [Monomial]
 ubox :: Expression -> UExp
@@ -19,19 +19,18 @@ inZp p = automap (\(Monomial c m) -> Monomial (c `mod` p) m)
 
 instance Show Monomial where
     show (Monomial 0 _) = "0"
-    show (Monomial 1 "") = "1"
+    show (Monomial 1 "") = "+1"
     show (Monomial (-1) "") = "-1"
-    show (Monomial 1 s) = s
+    show (Monomial 1 s) = "+" ++ s
     show (Monomial (-1) s) = "-" ++ s
-    show (Monomial n s) = (show n) ++ s
+    show (Monomial n s) = (if n >= 0 then "+" else "-") ++ (show n) ++ s
 instance Show Expression where
     show (Expression []) = ""
     show (Expression l)  =
-        (\x -> if x == [] then "" else let m = head x
-                                           ms = tail x
-                                        in (show m) ++ (case ms of [] -> ""
-                                                                   (Monomial c m'):ms' -> if c < 0 then "" else "+"
-                                ) ++ (show $ Expression ms)) $ sumSort l
+        (\x -> if x == [] then "0"
+                          else let m = head x
+                                   ms = tail x
+                                in (show m) ++ (show $ Expression ms)) $ sumSort l
 
 cons' :: Monomial -> Expression -> Expression
 cons' m (Expression ex) = Expression $ m:ex
@@ -63,8 +62,12 @@ multh (Monomial c m) ex = sum' $ automap (\(Monomial c' m') -> (Monomial (c*c') 
 sumSort :: UExp -> UExp
 sumSort l = sortBy (\(Monomial _ a) (Monomial _ b) -> compare (length a) (length b)) $ filter (\(Monomial c _) -> c /= 0) l
 
-e0 = Expression [Monomial 0 ""]
+e0 = Expression [m0]
+m0 = Monomial 0 ""
 
+instance Eq Monomial where
+    (Monomial 0 _) == (Monomial 0 _) = True
+    (Monomial n1 s1) == (Monomial n2 s2) = (n1 == n2) && (s1 == s2)
 instance Eq Expression where
     (Expression []) == (Expression []) = True
     (Expression [Monomial 0 _]) == (Expression []) = True
@@ -72,7 +75,7 @@ instance Eq Expression where
     (Expression [Monomial 0 _]) == (Expression [Monomial 0 _]) = True
     _ == (Expression []) = False
     _ == (Expression [Monomial 0 _]) = False
-    a == b = (a - b) == e0
+    a == b = (case (a - b) of Expression l -> Expression $ sumSort l) == e0
 instance Num Expression where
     (Expression []) + (Expression l) = Expression l
     (Expression ((Monomial c m):es)) + ex2 = (+) (Expression es) $ sumh (Monomial c m) ex2

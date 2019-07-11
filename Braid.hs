@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies,FlexibleContexts #-}
 module Braid
-    (Braid (get_width,get_word,algebra_footprint,toStdBraid,fromStdBraid)
+    (Braid (get_width,get_word,algebra_footprint,toStdBraid,fromStdBraid,isCross)
     ,StdBraid (StdBraid)
     ,AugBraid (AugBraid)
     ) where
@@ -17,6 +17,7 @@ class (Show a, Eq a, Monad (M a),Eq1 (M a)) => Braid a where
     algebra_footprint :: a -> [(Char,Int)]
     toStdBraid :: a -> StdBraid
     fromStdBraid :: StdBraid -> a
+    isCross :: a -> Int -> Bool
     cross_art :: a -> Int -> M a Int -> Maybe String
     showBraid :: a -> String
     showBraid b = foldr (\x xs -> (concat $ map (showh x) s) ++ "\n" ++ xs) "" [0..(3*(w-1))]
@@ -38,6 +39,7 @@ instance Braid StdBraid where
     algebra_footprint b = algebra_footprint $ ((fromStdBraid b)::AugBraid)
     toStdBraid = id
     fromStdBraid = id
+    isCross (StdBraid _ w) x = x < length w
     cross_art _b row (Identity s) = if (row - (abs $ s-1)*3) `elem` [0..3]
                         then Just $ if s > 0 then (case ((row-(s-1)*3) `mod` 4) of 0 -> "--\\  /--"
                                                                                    1 -> "   \\    "
@@ -61,7 +63,7 @@ instance Show StdBraid where
 footprinth :: Int -> [Either (Int,Char,Char) Int] -> [(Char,Int)]
 footprinth _k [] = []
 footprinth k ((Right i):xs) = (toEnum k,i):(footprinth (k+1) xs)
-footprinth k ((Left (i,c,cinv)):xs) = [(c,i),(cinv,i+1)] ++ (footprinth k xs)
+footprinth k ((Left (i,c,cinv)):xs) = [(c,i),(cinv,i+1)] ++ (footprinth (k+1) xs)
 
 data AugBraid = AugBraid Int [Either (Int,Char,Char) Int] -- Either element of H1(L), its inverse, and its position or an integer representing the corresponding braid group element
 instance Braid AugBraid where
@@ -70,12 +72,13 @@ instance Braid AugBraid where
     algebra_footprint (AugBraid _ w) = footprinth 65 w
     toStdBraid (AugBraid w ws) = StdBraid w (rights ws)
     fromStdBraid (StdBraid w ws) = AugBraid w (map Right ws)
+    isCross (AugBraid _ ws) x = (x < length ws) && (isRight $ ws !! x)
     cross_art b row (Right s) = cross_art (toStdBraid b) row (Identity s)
     cross_art _b row (Left (s,s1,s2)) = if (row - (abs $ s-1)*3) `elem` [0..3]
-                        then Just $ (case ((row-(s-1)*3) `mod` 4) of 0 -> "---" ++ show s1 ++  "---"
-                                                                     1 -> "    " ++ "    " ++ "    "
-                                                                     2 -> "    " ++ "    " ++ "    "
-                                                                     3 -> "---" ++ show s2 ++  "---")
+                        then Just $ (case ((row-(s-1)*3) `mod` 4) of 0 -> "---" ++ [s1] ++ "----"
+                                                                     1 -> "   " ++  " " ++ "    "
+                                                                     2 -> "   " ++  " " ++ "    "
+                                                                     3 -> "---" ++ [s2] ++ "----")
                         else Nothing
 instance Eq AugBraid where
     (==) = equal
