@@ -3,6 +3,7 @@ module Main
     ) where
 
 import Augmentations
+import qualified Aug2 as A
 import Augmentation.Disks
 import Algebra
 import Algebra.DGA
@@ -119,11 +120,18 @@ uniques = mapM_ print $ getUniques b0
 fac 0 = 1
 fac n = n * (fac $ n-1)
 catalan  n = div (fac $ 2*n) $ (fac $ n+1) * (fac n)
-numAug m n = numAugmentations $ genTorusBraid m n
+numAug m n = A.numAugmentations $ genTorusBraid m n
 
-main = do { putStrLn "Test Braid and leaves"
-          ; putStrLn thing
-          ; uniques
+out = outh 2 10
+outh x m
+    | x <= m = ((++) (show x ++ ",") $ foldr (\s ss -> (show s) ++ "," ++ ss) "\n" $ map (numAug x) [1..m]) ++ (outh (x+1) m)
+    | otherwise = ""
+
+main = do { writeFile "data.csv" out
+          ; putStrLn out
+          --; putStrLn "Test Braid and leaves"
+          --; putStrLn thing
+          --; uniques
           --; putStrLn "Test Cases"
           --; putStrLn "123"
           --; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m123 x) ++ "\t\t\t" ++ show (applyDGAMap m123' x)) alph
@@ -143,25 +151,25 @@ main = do { putStrLn "Test Braid and leaves"
           --; putStrLn "Worse Guess:"
           --; print numbers
           --; leafyBois
-          ; putStrLn "2,n Experiment"
-          ; let n = 10
-          ; let aug = map (numAug 2) [1..10]
-          ; let cat = map catalan [1..10] 
-          ; putStrLn "Upper Bound"
-          ; print $ map fac [1..10]
-          ; putStrLn "Program"
-          ; print aug 
-          ; putStrLn "Target"
-          ; print cat 
-          ; putStrLn "Same?"
-          ; print $ aug == cat
-          -- ; putStrLn "Test Cases"
-          -- ; print b1
-          -- ; mapM_ (\c -> putStrLn $ (show $ map1' c) ++ "\t" ++ (show $ map1p c)) alph
-          -- ; print b2
-          -- ; mapM_ (\c -> putStrLn $ (show $ map2' c) ++ "\t" ++ (show $ map2p c)) alph
-          -- ; print b3
-          -- ; mapM_ (\c -> putStrLn $ (show $ map3' c) ++ "\t" ++ (show $ map3p c)) alph
+          --; putStrLn "2,n Experiment"
+          --; let n = 10
+          --; let aug = map (numAug 2) [1..10]
+          --; let cat = map catalan [1..10] 
+          --; putStrLn "Upper Bound"
+          --; print $ map fac [1..10]
+          --; putStrLn "Program"
+          --; print aug 
+          --; putStrLn "Target"
+          --; print cat 
+          --; putStrLn "Same?"
+          --; print $ aug == cat
+          --; putStrLn "Test Cases"
+          --; print b1
+          --; mapM_ (\c -> putStrLn $ (show $ map1' c) ++ "\t" ++ (show $ map1p c)) alph
+          --; print b2
+          --; mapM_ (\c -> putStrLn $ (show $ map2' c) ++ "\t" ++ (show $ map2p c)) alph
+          --; print b3
+          --; mapM_ (\c -> putStrLn $ (show $ map3' c) ++ "\t" ++ (show $ map3p c)) alph
           }
 {-
 main = do { System.IO.hSetEncoding System.IO.stdout System.IO.utf8
