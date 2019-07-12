@@ -11,13 +11,13 @@ import Algebra
 import Algebra.DGA
 import Augmentation.Disks
 import Braid
+--import Libs.Graph
 
 import Data.List
 import Data.Maybe
 import Data.Either
 import Data.Tree
 import Control.Monad
-import Libs.List
 
 import Debug.Trace
 
@@ -57,8 +57,8 @@ newChars x b = charh x (get_word b) 460 --4607
 
 charh _ [] _ = Nothing
 charh 0 ((Right _):_) t = Just (toEnum (t+1), toEnum (t+2))
-charh x ((Right _):cs) t = charh (x-1) cs (t+3)
-charh x ((Left _):cs) t = charh x cs (t+3)
+charh x ((Right _):cs) t = charh (x-1) cs (t+2)
+charh x ((Left _):cs) t = charh x cs (t+2)
 --charh x ((Left (_z,c,cinv)):cs) t = charh x cs ((+) 1 $ foldr max (t+1) [fromEnum c,fromEnum cinv])
 
 pinchMap :: Int -> AugBraid -> Maybe (DGA_Map, AugBraid)
@@ -66,9 +66,10 @@ pinchMap _ (AugBraid 0 _) = Just (DGA_Map [], AugBraid 0 [])
 pinchMap _ (AugBraid _ []) = pinchMap 0 (AugBraid 0 [])
 pinchMap x b = do
     { let chars = algebra_footprint b
-    ; let foot' = zipWith (\c x -> (c,isCross b x)) chars [0..((length chars) -1)]
+    ; let foot' = zipWith (\c x -> (c,isCross b x)) chars [0..]
     ; change <- ithcross x b
     ; (c,cinv) <- newChars x b
+    ; let disks = map (\((c0,i),k) -> (++) [[c0]] $ map (\d -> cinv:(neg d)) $ augmentationDisks b change c0) foot'
     ; let cnegs = catMaybes $ map (\((c0,i),k) -> if c0 == change
             then Just $ (c0,[[c]])
             else if i == 0
@@ -77,13 +78,13 @@ pinchMap x b = do
                     then Just $ (c0,(++) [[c0]] $ map (\d -> cinv:(neg d)) $ augmentationDisks b change c0)
                     else Nothing -- Just (c0,[[c0]])
             ) foot'
-    ; let cexps = map (\(c,s) -> (c,sum $ map (\t -> Expression [Monomial 1 t]) s)) $ filter (\(_,s) -> s /= []) cnegs
+    ; let cexps = map (\(c,s) -> (c,applyRelations b $ sum $ map (\t -> Expression [Monomial 1 t]) s)) $ filter (\(_,s) -> s /= []) cnegs
     ; let dmap = DGA_Map cexps
     ; b' <- pinch x b
     ; return $ (dmap, b')
     }
                 
-pinchTree :: AugBraid -> Tree (DGA_Map, AugBraid)
+pinchTree :: AugBraid -> Tree (DGA_Map, AugBraid) --This is highly inefficient!!! It generates n! nodes! That's really bad! We can do better by identifying equivilant maps at each level of the tree!
 pinchTree (AugBraid 0 _) = nullTree
 pinchTree (AugBraid _ []) = nullTree
 pinchTree b = Node (DGA_Map [], b)

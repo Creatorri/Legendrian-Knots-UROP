@@ -124,36 +124,37 @@ numAug m n = numAugmentations $ genTorusBraid m n
 main = do { putStrLn "Test Braid and leaves"
           ; putStrLn thing
           ; uniques
-          ; putStrLn "Test Cases"
-          ; putStrLn "123"
-          ; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m123 x) ++ "\t\t\t" ++ show (applyDGAMap m123' x)) alph
-         ; putStrLn "132"
-         ; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m132 x) ++ "\t\t\t" ++ show (applyDGAMap m132' x)) alph
-         ; putStrLn "312"
-         ; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m312 x) ++ "\t\t\t" ++ show (applyDGAMap m312' x)) alph
-         ; putStrLn "213"
-         ; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m213 x) ++ "\t\t\t" ++ show (applyDGAMap m213' x)) alph
-         ; putStrLn "231"
-         ; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m231 x) ++ "\t\t\t" ++ show (applyDGAMap m231' x)) alph
-         ; putStrLn "321"
-         ; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m321 x) ++ "\t\t\t" ++ show (applyDGAMap m321' x)) alph
+          --; putStrLn "Test Cases"
+          --; putStrLn "123"
+          --; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m123 x) ++ "\t\t\t" ++ show (applyDGAMap m123' x)) alph
+          --; putStrLn "132"
+          --; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m132 x) ++ "\t\t\t" ++ show (applyDGAMap m132' x)) alph
+          --; putStrLn "312"
+          --; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m312 x) ++ "\t\t\t" ++ show (applyDGAMap m312' x)) alph
+          --; putStrLn "213"
+          --; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m213 x) ++ "\t\t\t" ++ show (applyDGAMap m213' x)) alph
+          --; putStrLn "231"
+          --; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m231 x) ++ "\t\t\t" ++ show (applyDGAMap m231' x)) alph
+          --; putStrLn "321"
+          --; mapM_ putStrLn $ map (\x -> (show x) ++ ":" ++ show (applyDGAMap m321 x) ++ "\t\t\t" ++ show (applyDGAMap m321' x)) alph
           --; print b0
           --; putStrLn "Bad Guess:"
           --; print lefnum
           --; putStrLn "Worse Guess:"
           --; print numbers
           --; leafyBois
-          --; putStrLn "2,n Experiment"
-          --; let aug = map (numAug 2) [1..5]
-          --; let cat = map catalan [1..5] 
-          --; putStrLn "Upper Bound"
-          --; print $ map fac [1..5]
-          --; putStrLn "Program"
-          --; print aug 
-          --; putStrLn "Target"
-          --; print cat 
-          --; putStrLn "Same?"
-          --; print $ aug == cat
+          ; putStrLn "2,n Experiment"
+          ; let n = 10
+          ; let aug = map (numAug 2) [1..10]
+          ; let cat = map catalan [1..10] 
+          ; putStrLn "Upper Bound"
+          ; print $ map fac [1..10]
+          ; putStrLn "Program"
+          ; print aug 
+          ; putStrLn "Target"
+          ; print cat 
+          ; putStrLn "Same?"
+          ; print $ aug == cat
           -- ; putStrLn "Test Cases"
           -- ; print b1
           -- ; mapM_ (\c -> putStrLn $ (show $ map1' c) ++ "\t" ++ (show $ map1p c)) alph
