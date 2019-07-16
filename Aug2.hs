@@ -89,15 +89,15 @@ pinchMap x b = do
 nullGraph = Leaf [(DGA_Map [],AugBraid 0 [])]
 
 pinchgraphh :: [(DGA_Map,AugBraid)] -> Int -> LevelGraph (DGA_Map,AugBraid)
-pinchgraphh last 1 = Leaf last
+pinchgraphh last 1 = trace ("LeafSize: " ++ (show $ length last)) Leaf last
 pinchgraphh last i = let thisnext = map (\(m1,b1) ->
                             let preforest = catMaybes $ map (\y -> pinchMap (y-1) b1) [1..(length $ get_word $ toStdBraid b1)]
                                 forest = map (\(m2,b2) -> (compose_maps m1 m2,b2)) preforest
                              in ((m1,b1),forest)
                             ) last
                          next = nub $ concat $ (map snd thisnext)
-                         this = map (\(a,as) -> (a, catMaybes $ map (\s -> getnum next s) as)) thisnext
-                      in Level this $ pinchgraphh next $ i-1
+                         this = nub $ map (\(a,as) -> (a, catMaybes $ map (\s -> getnum next s) as)) thisnext
+                      in trace ("LevelSize: " ++ show (length this)) $ Level this $ pinchgraphh next $ i-1
 
 pinchGraph :: StdBraid -> LevelGraph (DGA_Map, AugBraid)
 pinchGraph (StdBraid 0 _) = nullGraph
@@ -114,4 +114,4 @@ getUniques :: StdBraid -> [[Expression]]
 getUniques b = nub $ map (\(m,b') -> (map (applyDGAMap m) $ map (\(c,_) -> Expression [Monomial 1 [c]]) $ algebra_footprint b)) $ leaves $ pinchGraph b
 
 numAugmentations :: StdBraid -> Integer
-numAugmentations = genericLength . getUniques
+numAugmentations = (\n -> traceShow n n) . genericLength . getUniques

@@ -1,22 +1,24 @@
-module Augmentations
+module Aug3
     (pinch
     ,pinchMap
-    ,pinchTree
+    ,pinchGraph
     ,getUniques
     ,leaves
     ,numAugmentations
-    ,equivPerms
     ) where
 
 import Algebra
 import Algebra.DGA
 import Augmentation.Disks
 import Braid
+import Libs.Graph
+
+import Braid.GenBraid
 
 import Data.List
 import Data.Maybe
 import Data.Either
-import Data.Tree
+--import Data.Tree
 import Control.Monad
 
 import Debug.Trace
@@ -83,46 +85,33 @@ pinchMap x b = do
     ; b' <- pinch x b
     ; return $ (dmap, b')
     }
-                
-pinchTree :: AugBraid -> Tree (DGA_Map, AugBraid) --This is highly inefficient!!! It generates n! nodes! That's really bad! We can do better by identifying equivilant maps at each level of the tree!
-pinchTree (AugBraid 0 _) = nullTree
-pinchTree (AugBraid _ []) = nullTree
-pinchTree b = Node (DGA_Map [], b)
-        (foldl (\xs x -> (++) xs $ maybe [] (\l -> [l]) $ do
-            { (m1, b1) <- pinchMap (x-1) b
-            --; tree <- (\z -> if z == nullTree then Nothing else Just z) $ pinchTree b1
-            ; let tree = pinchTree b1
-            ; let forest = subForest $ fmap (\(m2,b2) -> (case (compose_maps m1 m2)
-                                         of DGA_Map m -> DGA_Map $ id m --map (\(c,e) -> (c,inZp 2 e)) m
-                                  ,b2)) tree
-            ; return $ Node (m1,b1) forest
-            }) [] [1..(length $ get_word $ toStdBraid b)])
 
-nullTree = Node (DGA_Map [],AugBraid 0 []) []
+nullGraph = Leaf [DGA_Map []]
 
-perms :: Tree (a,Int) -> Tree (a,Int)
-perms (Node (a,i) t) = Node (a,i) $ map (fmap (\(a',i') -> (a',if i == 0 then i' else if i == 1 then i'+1 else if i' >= i then i' + 1 else i')) . perms) t
+pinchgraphh :: [(DGA_Map,AugBraid)] -> Int -> LevelGraph DGA_Map
+pinchgraphh last 1 = Leaf $ map fst last
+pinchgraphh last i = let thisnext = map (\(m1,b1) ->
+                            let preforest = catMaybes $ map (\y -> pinchMap (y-1) b1) [1..(length $ get_word $ toStdBraid b1)]
+                                forest = map (\(m2,b2) -> (compose_maps m1 m2,b2)) preforest
+                             in ((m1,b1),forest)
+                            ) last
+                         next = nub $ concat $ (map snd thisnext)
+                         this = map (\(a,as) -> (fst a,catMaybes $ map (\s -> getnum next s) as)) thisnext
+                      in Level this $ pinchgraphh next $ i-1
 
-labelNodes :: Forest a -> Forest (a,Int)
-labelNodes t = zipWith (\x (Node a fs) -> Node (a,x) $ labelNodes fs) [1..(length t)] t
+pinchGraph :: StdBraid -> LevelGraph DGA_Map
+pinchGraph (StdBraid 0 _) = nullGraph
+pinchGraph (StdBraid _ []) = nullGraph
+pinchGraph b = let l = [0..(length $ get_word b)-1]
+                   nodes = catMaybes $ map (\x -> pinchMap x $ fromStdBraid b) l
+                in Level [(DGA_Map [],l)] $ pinchgraphh nodes (length l)
 
-collect :: Tree a -> [[a]]
-collect (Node a []) = [[a]]
-collect (Node a as) = map (\as' -> a:as') $ concat $ map collect as
+getnum :: Eq a => [a] -> a -> Maybe Int
+getnum [] _ = Nothing
+getnum (a:as) t = if a == t then Just 1 else (return . (+) 1) =<< (getnum as t)
 
-equivPerms :: Eq a => Tree a -> [[[Int]]]
-equivPerms t0@(Node a t) = let t' = perms $ Node (a,0) $ labelNodes t
-                               alist = nub $ leaves t0
-                               ks = map tail $ collect t'
-                               ks' = map (\k -> (fst $ last k, map snd k)) ks
-                            in map (\a -> map snd $ filter (\(x,_p) -> a == x) ks') alist
+getUniques :: StdBraid -> [[Expression]]
+getUniques b = nub $ map (\m -> (map (applyDGAMap m) $ map (\(c,_) -> Expression [Monomial 1 [c]]) $ algebra_footprint b)) $ leaves $ pinchGraph b
 
-leaves :: Tree a -> [a]
-leaves (Node a []) = [a]
-leaves (Node a as) = (concat $ map leaves as)
-
-getUniques :: AugBraid -> [[Expression]]
-getUniques b = nub $ map (\(m,b') -> (map (applyDGAMap m) $ map (\(c,_) -> Expression [Monomial 1 [c]]) $ algebra_footprint b)) $ leaves $ pinchTree b
-
-numAugmentations :: AugBraid -> Integer
+numAugmentations :: StdBraid -> Integer
 numAugmentations = genericLength . getUniques

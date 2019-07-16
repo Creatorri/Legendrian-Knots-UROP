@@ -2,8 +2,10 @@ module Main
     (main
     ) where
 
-import Augmentations
-import qualified Aug2 as A
+import qualified Augmentations as A
+import Libs.Graph
+import Aug2
+--import Aug3
 import Augmentation.Disks
 import Algebra
 import Algebra.DGA
@@ -17,7 +19,7 @@ import Data.Tree
 import Data.Functor.Identity
 
 b0 :: AugBraid
-b0 = genTorusBraid 2 3
+b0 = genTorusBraid 3 5
 
 {--5 3
 --b1 = pinch 1 b0
@@ -46,7 +48,7 @@ map1p = applyDGAMap m1'
 map2p = applyDGAMap $ compose_maps m1' m2'
 map3p = applyDGAMap $ compose_maps m1' $ compose_maps m2' m3'
 --}
-
+{--
 --2 3
 m123 = DGA_Map [('A',Expression [Monomial 1 "\461"])
                ,('B',Expression [Monomial 1 "\464",Monomial 1 "\462"])
@@ -100,13 +102,13 @@ m321' = fromJust $ do
             ; (m3,b3) <- pinchMap 0 b2
             ; return $ compose_maps m1 $ compose_maps m2 m3
             }
-
+--}
 alph = map (\(c,_) -> Expression [Monomial 1 [c]]) $ algebra_footprint b0
 
 showlh [] = "]"
 showlh [a] = a ++ "]"
 showlh (a:as) = a ++ "," ++ showlh as
-
+{-
 tree = pinchTree b0
 printableTree = fmap (\(DGA_Map m,b) -> ((++) (show b) $ (++) "[" $ showlh $ map (\(c,s) -> "("++[c]++","++show s++")") m) {-++ "\n\n" ++ (show b)-}) tree
 uniqs = (++) "[" $ showlh $ map (\s -> s ++ "\n") $ nub $ leaves printableTree
@@ -116,19 +118,33 @@ leafyBois = mapM_ (\l -> print l) $ nub $ map (\(m,b) -> map (applyDGAMap m) alp
 lefnum = length $ nub $ leaves printableTree
 numbers = numAugmentations b0
 uniques = mapM_ print $ getUniques b0
-
+-}
 fac 0 = 1
 fac n = n * (fac $ n-1)
 catalan  n = div (fac $ 2*n) $ (fac $ n+1) * (fac n)
-numAug m n = A.numAugmentations $ genTorusBraid m n
+numAug m n = numAugmentations $ genTorusBraid m n
+{-
+out = outh [2..5] 3
+outh::[Int]->Int->IO ()
+outh [] _ = ""
+outh (x:xs) m = ((++) (show x ++ ": , ") $ foldr (\s ss -> (show s) ++ ", " ++ ss) "\n" $ map (numAug x) [1..m]) ++ (outh xs m)
+-}
+putInFile :: [Int] -> Int -> IO ()
+putInFile (i:is) n = do { let ks = map (numAug i) [1..n]
+                        ; mapM_ (\k -> appendFile "Data.csv" $ show k ++ ",") ks
+                        --; print ks
+                        ; appendFile "Data.csv" "\n"
+                        ; putInFile is n
+                        } 
 
-out = outh 2 10
-outh x m
-    | x <= m = ((++) (show x ++ ",") $ foldr (\s ss -> (show s) ++ "," ++ ss) "\n" $ map (numAug x) [1..m]) ++ (outh (x+1) m)
-    | otherwise = ""
+numeach :: LevelGraph a -> [Int]
+numeach (Leaf as) = [length as]
+numeach (Level ans lg) = (length ans):(numeach lg)
 
-main = do { writeFile "data.csv" out
-          ; putStrLn out
+main = do { print "Running" 
+          -- putInFile [2..5] 5
+          --; putStrLn out
+          --; writeFile "data.csv" out
           --; putStrLn "Test Braid and leaves"
           --; putStrLn thing
           --; uniques
