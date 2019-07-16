@@ -141,7 +141,13 @@ numeach :: LevelGraph a -> [Int]
 numeach (Leaf as) = [length as]
 numeach (Level ans lg) = (length ans):(numeach lg)
 
+fileperms m n = mapM_ (\x -> appendFile ("data/" ++ show m ++ "," ++ show n ++ "TorusPerms") (show x ++ "\n")) $ A.equivPerms $ A.pinchTree $ genTorusBraid m n
+
 main = do { print "Running" 
+          ; mapM_ (fileperms 2) [1..5]
+          ; mapM_ (fileperms 3) [1..5]
+          ; mapM_ (fileperms 4) [1..5]
+          ; mapM_ (fileperms 5) [1..5]
           -- putInFile [2..5] 5
           --; putStrLn out
           --; writeFile "data.csv" out
