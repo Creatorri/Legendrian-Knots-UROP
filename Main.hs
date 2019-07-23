@@ -2,10 +2,11 @@ module Main
     (main
     ) where
 
-import qualified Augmentations as A
 import Libs.Graph
-import Aug2
---import Aug3
+import Augmentation.Pinch
+import Augmentation.Braid
+import Augmentation.Graph
+import qualified Augmentation.Tree as A
 import Augmentation.Disks
 import Algebra
 import Algebra.DGA
@@ -144,10 +145,12 @@ numeach (Level ans lg) = (length ans):(numeach lg)
 fileperms m n = mapM_ (\x -> appendFile ("data/" ++ show m ++ "," ++ show n ++ "TorusPerms") (show x ++ "\n")) $ A.equivPerms $ A.pinchTree $ genTorusBraid m n
 
 main = do { print "Running" 
-          ; mapM_ (fileperms 2) [1..5]
-          ; mapM_ (fileperms 3) [1..5]
-          ; mapM_ (fileperms 4) [1..5]
-          ; mapM_ (fileperms 5) [1..5]
+          ; appendFile "Data.csv" "\n"
+          ; putInFile [4,5] 3
+          --; mapM_ (fileperms 2) [1..5]
+          --; mapM_ (fileperms 3) [1..5]
+          --; mapM_ (fileperms 4) [1..3]
+          --; mapM_ (fileperms 5) [1..3]
           -- putInFile [2..5] 5
           --; putStrLn out
           --; writeFile "data.csv" out

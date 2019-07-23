@@ -59,9 +59,8 @@ multh :: Monomial -> Expression -> Expression
 multh (Monomial 0 _) ex = Expression [Monomial 0 ""]
 multh (Monomial c m) ex = sum' $ automap (\(Monomial c' m') -> (Monomial (c*c') $ m++m')) ex
 
---If the algebra is communitive then you can sort the word but other than that... yikes
 sumSort :: UExp -> UExp
-sumSort l = {-map (\(Monomial c w) -> Monomial c (sort w)) $-} sortBy (\(Monomial _ a) (Monomial _ b) -> compare (length a) (length b)) $ filter (\(Monomial c _) -> c /= 0) l
+sumSort l = sortBy (\(Monomial _ a) (Monomial _ b) -> compare (length a) (length b)) $ filter (\(Monomial c _) -> c /= 0) l
 
 e0 = Expression [m0]
 m0 = Monomial 0 ""
