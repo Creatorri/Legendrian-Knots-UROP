@@ -1,9 +1,10 @@
-module Augmentation.Pinch
+module Augmentation.SymPinch
     (pinch
     ,pinchMap
     ) where
 
-import Algebra
+import Algebra.Symbolic
+import Algebra.SymDGA
 import Augmentation.Braid
 import Augmentation.Disks
 import Braid
@@ -54,13 +55,15 @@ charh x ((Left _):cs) t = charh x cs (t+2)
 --charh x ((Left (_z,c,cinv)):cs) t = charh x cs ((+) 1 $ foldr max (t+1) [fromEnum c,fromEnum cinv])
 
 pinchMap :: Int -> AugBraid -> Maybe (DGA_Map, AugBraid)
-pinchMap _ (AugBraid 0 _) = Just (DGA_Map [], AugBraid 0 [])
+pinchMap _ (AugBraid 0 _) = Just (Map [], AugBraid 0 [])
 pinchMap _ (AugBraid _ []) = pinchMap 0 (AugBraid 0 [])
-pinchMap x b = do
+pinchMap x b@(AugBraid _ w) = do
     { let chars = algebra_footprint b
     ; let foot' = zipWith (\c x -> (c,isCross b x)) chars [0..]
     ; change <- ithcross x b
     ; (c,cinv) <- newChars x b
+    ; let ccinv = (cinv,c):(map (\(_,c',cinv') -> (cinv',c')) $ lefts w)
+    ; let cinvs = map fst ccinv
     ; let disks = map (\((c0,i),k) -> (++) [[c0]] $ map (\d -> cinv:(neg d)) $ augmentationDisks b change c0) foot'
     ; let cnegs = catMaybes $ map (\((c0,i),k) -> if c0 == change
             then Just $ (c0,[[c]])
@@ -70,9 +73,8 @@ pinchMap x b = do
                     then Just $ (c0,(++) [[c0]] $ map (\d -> cinv:(neg d)) $ augmentationDisks b change c0)
                     else Nothing -- Just (c0,[[c0]])
             ) foot'
-    ; let cexps = map (\(c,s) -> (c,applyRelations b $ sum $ map (\t -> Expression [Monomial 1 t]) s)) $ filter (\(_,s) -> s /= []) cnegs
-    ; let dmap = DGA_Map cexps
+    ; let cexps = map (\(c,s) -> (c,sum $ map (\t' -> product $ map (\t -> if t `elem` cinvs then (recip $ maybe Fail Var $ lookup t ccinv) else Var t) t') s)) $ filter (\(_,s) -> s /= []) cnegs
+    ; let dmap = Map cexps
     ; b' <- pinch x b
     ; return $ (dmap, b')
     }
-

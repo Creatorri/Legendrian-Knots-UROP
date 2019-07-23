@@ -3,15 +3,10 @@ module Main
     ) where
 
 import Libs.Graph
-import Augmentation.Pinch
-import Augmentation.Braid
-import Augmentation.Graph
+import Augmentation
 import qualified Augmentation.Tree as A
-import Augmentation.Disks
 import Algebra
-import Algebra.DGA
 import Braid
-import Braid.GenBraid
 import Control.Monad.Random
 import qualified System.IO
 import Data.List

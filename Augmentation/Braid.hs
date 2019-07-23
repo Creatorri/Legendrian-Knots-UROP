@@ -3,8 +3,9 @@ module Augmentation.Braid
     (AugBraid (AugBraid)
     ) where
 
-import Algebra
-import Braid
+import Algebra.Expression
+import Braid.Class
+import Libs.List
 
 import Data.Either
 import Data.Functor.Identity
@@ -27,11 +28,11 @@ splith key s@(c:cs)
     where s' = take (length key) s
           ss = (iterate tail s) !! ((length key) -1)
 
---TODO: ADD REALATIONS TO MAKE s_i * s_i^-1 = s_i^-1 * s_i = 1
-apprelh :: [Monomial] -> [(Char,Char)] -> Expression
-apprelh ms [] = Expression ms
+-- s_i * s_i^-1 = s_i^-1 * s_i = 1
+--apprelh :: [Monomial] -> [(Char,Char)] -> Expression
+{-apprelh ms [] = Expression ms
 apprelh ms ((c,cinv):ccs) = Expression $ map (\(Monomial k s) -> Monomial k $ concat $ split [c,cinv] $ concat $ split [cinv,c] s) $ (\(Expression ms') -> ms') $ apprelh ms ccs
-{-
+-}
 apprelh :: AugBraid -> [Monomial] -> [(Char,Char)] -> [Char] -> Expression
 apprelh _ [] _ _ = Expression []
 apprelh b ((Monomial k s):ms) ccinv cs
@@ -39,7 +40,7 @@ apprelh b ((Monomial k s):ms) ccinv cs
     | invs /= [] = (Expression [Monomial k $ foldl (\xs (c1,c2) -> remove c1 $ remove c2 xs) s invs]) + (apprelh b ms ccinv cs)
     | otherwise = (Expression [Monomial k s]) + (apprelh b ms ccinv cs)
     where invs = filter (\(c1,c2) -> (c1 `elem` s) && (c2 `elem` s)) ccinv
--}
+
 iscrossh :: [Either (Int,Char,Char) Int] -> Int -> Bool
 iscrossh [] _ = False
 iscrossh ((Left _):_) 0 = False
@@ -56,7 +57,7 @@ instance Braid AugBraid where
     toStdBraid (AugBraid w ws) = StdBraid w (rights ws)
     fromStdBraid (StdBraid w ws) = AugBraid w (map Right ws)
     isCross (AugBraid _ ws) x = iscrossh ws x
-    applyRelations b (Expression e) = apprelh e (map (\(_,c,c') -> (c,c')) $ lefts $ get_word b) --(map fst $ filter snd $ zipWith (\x c -> (c,isCross b x)) [0..] $ map fst $ algebra_footprint b)
+    applyRelations b (Expression e) = apprelh b e (map (\(_,c,c') -> (c,c')) $ lefts $ get_word b) (map fst $ filter snd $ zipWith (\x c -> (c,isCross b x)) [0..] $ map fst $ algebra_footprint b)
     cross_art b row (Right s) = cross_art (toStdBraid b) row (Identity s)
     cross_art _b row (Left (s,s1,s2)) = if (row - (abs $ s-1)*3) `elem` [0..3]
                         then Just $ (case ((row-(s-1)*3) `mod` 4) of 0 -> "---" ++ [s1] ++ "----"

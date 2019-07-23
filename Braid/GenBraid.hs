@@ -4,7 +4,7 @@ module Braid.GenBraid
     ) where
 
 import Control.Monad.Random.Lazy
-import Braid
+import Braid.Class
 
 genTorusBraid :: (Braid a) => Int -> Int -> a
 genTorusBraid m n = fromStdBraid $ StdBraid m $ map (\x -> (+) 1 $ mod x (m-1)) [0..((m-1)*n-1)]

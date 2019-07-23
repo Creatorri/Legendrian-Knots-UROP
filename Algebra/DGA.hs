@@ -5,7 +5,7 @@ module Algebra.DGA
     ,compose_maps
     ) where
 import Augmentation.Braid
-import Algebra
+import Algebra.Expression
 
 import Data.List
 
