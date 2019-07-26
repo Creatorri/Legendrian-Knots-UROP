@@ -4,7 +4,8 @@ module Braid.Class
     ,StdBraid (StdBraid)
     ) where
 
-import Algebra.Expression
+import Algebra.FreeGroup
+import Algebra.Adjoin
 import Libs.List
 import Data.Functor.Identity
 import Data.Functor.Classes
@@ -14,11 +15,10 @@ class (Show a, Eq a, Monad (M a),Eq1 (M a)) => Braid a where
     get_width :: a -> Int
     get_width = get_width . toStdBraid
     get_word :: a -> [M a Int]
-    algebra_footprint :: a -> [(Char,Int)]
+    algebra_footprint :: (Fractional f) => a -> [(Adjoin f FreeGroup,Int)]
     toStdBraid :: a -> StdBraid
     fromStdBraid :: StdBraid -> a
     isCross :: a -> Int -> Bool
-    applyRelations :: a -> Expression -> Expression
     cross_art :: a -> Int -> M a Int -> Maybe String
     showBraid :: a -> String
     showBraid b = foldr (\x xs -> (concat $ map (showh x) s) ++ "\n" ++ xs) "" [0..(3*(w-1))]
@@ -31,9 +31,9 @@ class (Show a, Eq a, Monad (M a),Eq1 (M a)) => Braid a where
     equal :: a -> a -> Bool
     equal b1 b2 = (get_width b1 == get_width b2) && (and $ zipWith (\b b' -> eq1 b b') (get_word b1) (get_word b2))
 
-footprinth :: Int -> [Int] -> [(Char,Int)]
+footprinth :: Int -> [Int] -> [(FreeGroup,Int)]
 footprinth _k [] = []
-footprinth k (i:xs) = (toEnum k,i):(footprinth (k+1) xs)
+footprinth k (i:xs) = (E $ toEnum k,i):(footprinth (k+1) xs)
 
 data StdBraid = StdBraid Int [Int]
 instance Braid StdBraid where
@@ -41,10 +41,9 @@ instance Braid StdBraid where
     get_width (StdBraid _ []) = 0
     get_width (StdBraid w _)  = w
     get_word (StdBraid _ w) = map Identity w
-    algebra_footprint (StdBraid _ w) = footprinth 65 w
+    algebra_footprint (StdBraid _ w) = map (\(g,i) -> (G g,i)) $ footprinth 65 w
     toStdBraid = id
     fromStdBraid = id
-    applyRelations _ = id
     isCross (StdBraid _ w) x = x < length w
     cross_art _b row (Identity s) = if (row - (abs $ s-1)*3) `elem` [0..3]
                         then Just $ if s > 0 then (case ((row-(s-1)*3) `mod` 4) of 0 -> "--\\  /--"

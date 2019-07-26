@@ -7,19 +7,20 @@ import Data.Maybe
 import Control.Monad
 import Braid
 import Libs.List
+import Algebra
 import Safe
 
-data Holomorphic_Disk = Script_M {pos::[Char],neg::[Char]} -- J-Holomorphic moduli disk with #pos + #neg points removed from the boundary
+data Holomorphic_Disk = Script_M {pos::[FreeGroup],neg::[FreeGroup]} -- J-Holomorphic moduli disk with #pos + #neg points removed from the boundary
 instance Show Holomorphic_Disk where
-    show (Script_M po ne) = "Disk_{" ++ po ++ "," ++ (if ne == "" then "-" else ne) ++ "}"
+    show (Script_M po ne) = "Disk_{" ++ show po ++ "," ++ (if show ne == "1" then "-" else show ne) ++ "}"
 instance Eq Holomorphic_Disk where
     (Script_M p1 n1) == (Script_M p2 n2) = let eq = (\a b -> a == b || a == (reverse b))
                                             in (eq p1 p2) && (eq n1 n2)
 
-type Braid_Fragment = [((Char,Int),Bool)]
+type Braid_Fragment = [((FreeGroup,Int),Bool)]
 
-data Path = Node (Char,Int) Int Path --Node (c,k) i p: Change in row at (c,k) to i, p continues
-          | Straight (Char,Int) [Int] Path --Straight (c,k) i p: No change in row(s) at (c,k), watching elements of i for negative quadrants, p continues
+data Path = Node (FreeGroup,Int) Int Path --Node (c,k) i p: Change in row at (c,k) to i, p continues
+          | Straight (FreeGroup,Int) [Int] Path --Straight (c,k) i p: No change in row(s) at (c,k), watching elements of i for negative quadrants, p continues
           | End Int --End i: stop the path at row i
 instance Show Path where
     show (End _) = "End"
@@ -31,12 +32,12 @@ instance Eq Path where
     (Straight c1 i1 p1) == (Straight c2 i2 p2) = c1 == c2 && i1 == i2 && p1 == p2
     _ == _ = False
 
-getNodes :: Path -> [(Char,Int)] --getNodes p: gets all the node elements of p, without row data
+getNodes :: Path -> [(FreeGroup,Int)] --getNodes p: gets all the node elements of p, without row data
 getNodes (Node c _ p) = c:(getNodes p)
 getNodes (End _) = []
 getNodes (Straight _ _ p) = getNodes p
 
-getStraights :: Path -> [((Char,Int),[Int])] --getStraights p: gets all the straight elements of p, with row data
+getStraights :: Path -> [((FreeGroup,Int),[Int])] --getStraights p: gets all the straight elements of p, with row data
 getStraights (Node _ _ p) = getStraights p
 getStraights (End _) = []
 getStraights (Straight c j p) = (c,j):(getStraights p)
@@ -138,7 +139,7 @@ getDisk p1 p2 (c1,i) (c2,j)
           s2 = {-filter (\(s,_) -> not $ s `elem` n1) $-} getStraights p2
           aboves = map (fst . fst) $ filter (\((_,i),j) -> i == (head j)-1 || i == (last j)-1) s1 -- negative points adjacent to the upper straights
           belows = map (fst . fst) $ filter (\((_,i),j) -> i == (head j)+1 || i == (last j)+1) s2 -- negative points adjacent to the lower straights
-          output = Just $ Script_M [c1,c2] $ belows ++ (reverse aboves)
+          output = Just $ Script_M [E c1,E c2] $ belows ++ (reverse aboves)
 
 augmentationDisks :: Braid b => b -> Char -> Char -> [Holomorphic_Disk] --augmentationDisks b c1 c2: given a braid and a pair of crossing references, find all holomorphic disks with postive ends at c1 and c2
 augmentationDisks b p q
@@ -146,15 +147,15 @@ augmentationDisks b p q
     | p < q = disks
     | p > q = map (\(Script_M po ne) -> Script_M (reverse po) (reverse ne)) $ augmentationDisks b q p
     | otherwise = []
-    where footprint = algebra_footprint b
-          pth = snd $ fromJust $ find (\(c,_) -> c == p) footprint
-          qth = snd $ fromJust $ find (\(c,_) -> c == q) footprint
+    where footprint = map (\(G x,i) -> (x, i)) $ algebra_footprint b
+          pth = snd $ fromJust $ find (\(c,_) -> c == E p) footprint
+          qth = snd $ fromJust $ find (\(c,_) -> c == E q) footprint
           foot' = zipWith (\c x -> (c,isCross b x)) footprint [0..((length footprint) -1)]
-          lookupt :: [(Char,Bool)]
+          lookupt :: [(FreeGroup,Bool)]
           lookupt = map (\((c,_),b) -> (c,b)) foot'
-          arecross = or $ map (maybe False id) [lookup p lookupt,lookup q lookupt]
-          frah1 l = if l == [] then [] else if (fst $ fst $ head l) == p then frah2 (tail l) else frah1 (tail l)
-          frah2 l = if l == [] then [] else if (fst $ fst $ head l) == q then [] else (head l):(frah2 (tail l))
+          arecross = or $ map (maybe False id) [lookup (E p) lookupt,lookup (E q) lookupt]
+          frah1 l = if l == [] then [] else if (fst $ fst $ head l) == E p then frah2 (tail l) else frah1 (tail l)
+          frah2 l = if l == [] then [] else if (fst $ fst $ head l) == E q then [] else (head l):(frah2 (tail l))
           fra = frah1 foot'
           paths = catMaybes $ getPaths pth qth fra
           disks = nub $ catMaybes $ concat $ map (\p1 -> map (\p2 -> getDisk p1 p2 (p,pth) (q,qth)) paths) paths

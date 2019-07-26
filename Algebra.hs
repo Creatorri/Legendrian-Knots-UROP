@@ -1,15 +1,17 @@
 module Algebra
-    (CE_DGA (..)
-    ,DGA_Map (..)
+    (DGA_Map (..)
     ,applyDGAMap
     ,compose_maps
-    ,Expr (..)
+    ,Adjoin (..)
+    ,FreeGroup (..)
+    ,Group (..)
+    ,Z2
     ,plugIn
-    ,Monomial (..)
-    ,Expression (..)
-    ,inZp
+    ,Algebra
     ) where
 
 import Algebra.DGA
-import Algebra.Expression
-import Algebra.Symbolic
+import Algebra.Adjoin
+import Algebra.Group
+import Algebra.FreeGroup
+import Algebra.Z2
