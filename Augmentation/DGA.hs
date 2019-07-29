@@ -1,18 +1,13 @@
-module Algebra.DGA
+module Augmentation.DGA
     (DGA_Map (DGA_Map)
     ,applyDGAMap
     ,compose_maps
     ,Algebra
     ) where
 
-import Algebra.FreeGroup
-import Algebra.Group
-import Algebra.Z2
-import Algebra.Adjoin
+import Algebra
 
 import Data.List
-
-type Algebra = Adjoin Z2 FreeGroup
 
 data DGA_Map = DGA_Map [(Char,Algebra)] deriving Eq
 instance Show DGA_Map where
@@ -26,4 +21,5 @@ applyDGAMap (DGA_Map alist) a = appmaph alist a
 
 appmaph::[(Char,Algebra)] -> Algebra -> Algebra
 appmaph [] = id
-appmaph ((c,e):cs) = plugIn (\g -> if g == E c then e else G g) . appmaph cs 
+appmaph cs = plugIn (\c -> case (lookup c cs) of Just e -> e
+                                                 Nothing -> G $ E c)

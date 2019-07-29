@@ -3,6 +3,7 @@ module Main
     ) where
 
 import Libs.Graph
+import Augmentation.Braid
 import Augmentation
 import Algebra
 import Braid
@@ -56,7 +57,7 @@ zeros = zipWith (\(_,e1) (_,e2) -> e1 - e2) l1 l2
 
 main = do { print "Running" 
           ; appendFile "Data.csv" "\n"
-          ; putInFile [4,5] 3
+          ; putInFile [3,4] 6
           --; mapM_ (fileperms 2) [1..5]
           --; mapM_ (fileperms 3) [1..5]
           --; mapM_ (fileperms 4) [1..3]

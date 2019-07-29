@@ -6,6 +6,7 @@ module Augmentation.Braid
     ) where
 
 import Algebra
+import Augmentation.DGA
 import Braid.Class
 import Libs.List
 
@@ -13,12 +14,15 @@ import Data.List
 import Data.Either
 import Data.Functor.Identity
 
+import Debug.Trace
+
 s :: Int -> Algebra
-s k = G $ E $ toEnum $ (2*k)+461
+s 0 = error "s 0"
+s k = G $ E $ toEnum $ (2*(k-1))+461
 
 bph :: StdBraid -> Int -> [Int]
-bph b@(StdBraid _ w) i = let i' = bphh w i
-                          in if i' == i then [i] else nub $ i':(bph b i')
+bph b@(StdBraid k w) i = let i' = take k $ iterate (bphh w) i
+                          in nub $ sort i'
 
 bphh :: [Int] -> Int -> Int
 bphh [] i = i
@@ -27,10 +31,9 @@ bphh (w:ws) i
     | w == (i-1) = bphh ws (i-1)
     | otherwise = bphh ws i
 
-extractChar :: Algebra -> Maybe (Char,Bool)
-extractChar (G (E c)) = Just (c,False)
-extractChar e = case (recip e) of (G (E c)) -> Just (c,True)
-                                  _ -> Nothing
+extractChar :: Algebra -> Maybe Char
+extractChar (G (E c)) = Just c
+extractChar e = Nothing
 
 eqh :: StdBraid -> Int -> Maybe ((Char,(Algebra,Algebra)),(Char,(Algebra,Algebra)))
 eqh b@(StdBraid _ ws) i = do
@@ -38,8 +41,10 @@ eqh b@(StdBraid _ ws) i = do
                                     then s x
                                     else if w == (i-1) then recip $ s x
                                                        else 1) ws [1..]
-                            ; (s1,r1) <- extractChar $ head word
-                            ; (s2,r2) <- extractChar $ last word
+                            ; c0 <- mapM (\(x,t) -> if x == i then Just (s t,False) else if x == i-1 then Just (s t,True) else Nothing) $ filter (\(x,_) -> (x == i) || (x == i-1)) $ zip ws [1..]
+                            ; chars <- mapM (\(x,b) -> (extractChar x) >>= (\x' -> return $ (x',b))) c0
+                            ; let (s1,r1) = head chars
+                            ; let (s2,r2) = last chars
                             ; let tword = tail word
                             ; let iword = init word
                             ; let pre = ((s1,(product $ tword, product $ reverse $ tword)),(s2,(product $ iword,product $ reverse $ iword)))
@@ -49,12 +54,15 @@ eqh b@(StdBraid _ ws) i = do
                             ; return $ f pre
                             }
 
-relations :: StdBraid -> Maybe DGA_Map
-relations b@(StdBraid w _) = themap >>= (return . DGA_Map)
-    where basePoints = map head $ nub $ map sort $ map (bph b) [1..w]
-          solutions = mapM (eqh b) $ filter (\x -> not $ x `elem` basePoints) [1..w]
-          solution = solutions >>= (Just . map (\((c,(a,_)),_) -> (c,a))) 
-          themap = buildMaph solution Nothing
+relations :: StdBraid -> Maybe [DGA_Map]
+relations b@(StdBraid w _) = do
+                                { let basePoints = map head $ nub $ map sort $ map (bph b) [1..w]
+                                ; solutions <- mapM (eqh b) $ filter (\x -> not $ x `elem` basePoints) [1..w]
+                                ; let solution = map (\((c1,(a11,a12)),(c2,(a21,a22))) -> [(c1,a11),(c1,a12),(c2,a21),(c2,a22)]) solutions
+                                ; let splited = map (\x -> DGA_Map $ zipWith (\l x' -> l !! x') solution x) $ permutations [0..3]
+                                ; let theMap = nub $ map (\x -> compose_maps x x) splited
+                                ; return theMap
+                                }
 
 buildMaph :: Maybe [(Char,Algebra)] -> Maybe [(Char,Algebra)] -> Maybe [(Char,Algebra)]
 buildMaph m m'

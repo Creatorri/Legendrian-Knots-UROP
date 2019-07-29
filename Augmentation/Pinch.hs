@@ -4,6 +4,7 @@ module Augmentation.Pinch
     ) where
 
 import Algebra
+import Augmentation.DGA
 import Augmentation.Braid
 import Augmentation.Disks
 import Braid
@@ -46,13 +47,13 @@ crossh i w f = if (isRight (head w))
 
 newChars :: Int -> AugBraid -> Maybe FreeGroup
 newChars x (AugBraid _ ws) | x > (length ws) = Nothing
-newChars x _ = case (s x) of (G c) -> Just c
-                             _ -> Nothing
+newChars x (AugBraid _ ws) = charh x ws 1
 
 charh _ [] _ = Nothing
-charh 0 ((Right _):_) t = Just $ E $ toEnum (t+1)
-charh x ((Right _):cs) t = charh (x-1) cs (t+2)
-charh x ((Left _):cs) t = charh x cs (t+2)
+charh 0 ((Right _):_) t = case (s t) of (G c) -> Just c
+                                        _ -> Nothing
+charh x ((Right _):cs) t = charh (x-1) cs (t+1)
+charh x ((Left _):cs) t = charh x cs (t+1)
 
 pinchMap :: Int -> AugBraid -> Maybe (DGA_Map, AugBraid)
 pinchMap _ (AugBraid 0 _) = Just (DGA_Map [], AugBraid 0 [])

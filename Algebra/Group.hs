@@ -3,4 +3,4 @@ module Algebra.Group
     ) where
 
 class Monoid m => Group m where
-    invert :: m -> m 
+    invert :: m -> m

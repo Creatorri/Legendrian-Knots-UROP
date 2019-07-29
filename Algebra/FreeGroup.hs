@@ -1,5 +1,6 @@
 module Algebra.FreeGroup
     (FreeGroup (Id,E)
+    ,groupPlugIn
     ) where
 
 import Algebra.Group
@@ -45,6 +46,12 @@ simplify ((a :<>: b) :<>: c) = simplify $ a :<>: (simplify $ b :<>: c)
 
 simplify (a :<>: b) = simplify a :<>: simplify b
 simplify a = a
+
+groupPlugIn :: Group b => (Char -> b) -> FreeGroup -> b
+groupPlugIn f (E c) = f c
+groupPlugIn f Id = mempty
+groupPlugIn f (Recip g) = invert $ groupPlugIn f g
+groupPlugIn f (a :<>: b) = (groupPlugIn f a) <> (groupPlugIn f b) 
 
 fullsimplify :: FreeGroup -> FreeGroup
 fullsimplify e = simp e Id

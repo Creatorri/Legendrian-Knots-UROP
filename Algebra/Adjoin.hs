@@ -1,6 +1,6 @@
 module Algebra.Adjoin
     (Adjoin (N,G)
-    ,plugIn
+    ,adjPlugIn
     ) where
 
 import Data.List
@@ -138,12 +138,16 @@ compareh (N a) = a
 compareh (G a) = fromInteger $ genericLength $ show a
 compareh (a :+: b) = max (compareh a) (compareh b)
 compareh (a :*: b) = max (compareh a) (compareh b)
-instance (Show g,Eq f,Eq g,Fractional f,Group g,Ord f) => Ord (Adjoin f g) where
-    compare a b = if a == b then EQ else compare (compareh a) (compareh b)
+instance (Eq f,Eq g,Fractional f,Group g) => Semigroup (Adjoin f g) where
+    (<>) = (*) 
+instance (Eq f,Eq g,Fractional f,Group g) => Monoid (Adjoin f g) where
+    mempty = 1
+instance (Eq f,Eq g,Fractional f,Group g) => Group (Adjoin f g) where
+    invert = recip
 
-plugIn :: (Eq f,Eq g,Fractional f,Group g) => (g -> Adjoin f g) -> Adjoin f g -> Adjoin f g
-plugIn f (N a) = N a
-plugIn f (G a) = f a
-plugIn f (a :+: b) = (plugIn f a) + (plugIn f b)
-plugIn f (a :*: b) = (plugIn f a) * (plugIn f b)
-plugIn f (Recip a) = recip $ plugIn f a
+adjPlugIn :: (Eq f,Eq g,Fractional f,Group g) => (g -> Adjoin f g) -> Adjoin f g -> Adjoin f g
+adjPlugIn f (N a) = N a
+adjPlugIn f (G a) = f a
+adjPlugIn f (a :+: b) = (adjPlugIn f a) + (adjPlugIn f b)
+adjPlugIn f (a :*: b) = (adjPlugIn f a) * (adjPlugIn f b)
+adjPlugIn f (Recip a) = recip $ adjPlugIn f a

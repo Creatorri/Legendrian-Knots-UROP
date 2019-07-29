@@ -1,8 +1,5 @@
 module Algebra
-    (DGA_Map (..)
-    ,applyDGAMap
-    ,compose_maps
-    ,Adjoin (..)
+    (Adjoin (..)
     ,FreeGroup (..)
     ,Group (..)
     ,Z2
@@ -10,8 +7,12 @@ module Algebra
     ,Algebra
     ) where
 
-import Algebra.DGA
 import Algebra.Adjoin
 import Algebra.Group
 import Algebra.FreeGroup
 import Algebra.Z2
+
+type Algebra = Adjoin Z2 FreeGroup
+
+plugIn :: (Eq f,Fractional f) => (Char -> Adjoin f FreeGroup) -> Adjoin f FreeGroup -> Adjoin f FreeGroup
+plugIn f = adjPlugIn (groupPlugIn f)
