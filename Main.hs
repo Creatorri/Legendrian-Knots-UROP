@@ -15,8 +15,13 @@ import Data.Tree
 import Data.Functor.Identity
 
 b0 :: AugBraid
-b0 = genTorusBraid 3 5
+b0 = genTorusBraid 3 2
 alph = map fst $ algebra_footprint b0
+
+b1 :: StdBraid
+b1 = genTorusBraid 3 2
+
+dothing = mapM_ print $ fromJust $ relations b1
 
 showlh [] = "]"
 showlh [a] = a ++ "]"

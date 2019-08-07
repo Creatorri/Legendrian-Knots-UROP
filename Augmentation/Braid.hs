@@ -12,6 +12,8 @@ import Libs.List
 
 import Data.List
 import Data.Either
+import Data.Maybe
+import Control.Monad
 import Data.Functor.Identity
 
 import Debug.Trace
@@ -35,6 +37,54 @@ extractChar :: Algebra -> Maybe Char
 extractChar (G (E c)) = Just c
 extractChar e = Nothing
 
+eqh :: StdBraid -> Int -> Maybe (DGA_Map,DGA_Map,DGA_Map,DGA_Map)
+eqh (StdBraid _ ws) i = do
+                            { let word = zipWith (\w x ->
+                                        if w == i
+                                            then s x
+                                            else if w == (i-1) then recip $ s x
+                                                               else 1) ws [1..]
+                            ; chars <- mapM (\(x,t) ->
+                                    (extractChar x) >>= (\x' -> return (x',t))) $ catMaybes $ map (\(x,t) ->
+                                        if x == i then Just (s t,True) else if x == i-1 then Just (s t,False) else Nothing) $ zip ws [1..]
+                            ; let (s1,r1) = head chars
+                            ; let (s2,r2) = last chars
+                            ; let tword = tail word
+                            ; let iword = init word
+                            ; let prod l = if l == [] then 1 else (head l) * (prod $ tail l)
+                            ; let g1 = if r1 then recip else id
+                            ; let g2 = if r2 then recip else id
+                            ; let m11 = DGA_Map [(s1,g1 $ prod tword)]
+                            ; let m12 = DGA_Map [(s1,g1 $ prod $ reverse $ tword)]
+                            ; let m21 = DGA_Map [(s2,g2 $ prod iword)]
+                            ; let m22 = DGA_Map [(s2,g2 $ prod $ reverse $ iword)]
+                            ; return (m11,m12,m21,m22)
+                            }
+
+nst :: Int -> (a,a,a,a) -> Maybe a
+nst 0 (a,_,_,_) = return a
+nst 1 (_,a,_,_) = return a
+nst 2 (_,_,a,_) = return a
+nst 3 (_,_,_,a) = return a
+nst _ _ = Nothing
+
+relations :: StdBraid -> Maybe [DGA_Map]
+relations b@(StdBraid w _) = do
+                                { let basePoints = map head $ nub $ map sort $ map (bph b) [1..w]
+                                ; let solutions = catMaybes $ map (eqh b) $ filter (\x -> not $ x `elem` basePoints) [1..w]
+                                --; let toPerm l = foldr (\x xs -> (x `mod` 4) * (4^(length xs)) + xs) l
+                                ; let fromPerm m n = if m == 0 then [] else (fromPerm (m-1) ((n - (n `mod` 4)) `div` 4)) ++ [n `mod` 4]
+                                ; let perms = map (fromPerm (length solutions)) [0..(4^(length solutions))-1]
+                                ; let maps = nub $ catMaybes $ map (\l -> do
+                                                    { ms <- zipWithM nst l solutions
+                                                    ; let none = DGA_Map []
+                                                    ; let left = foldl compose_maps none ms
+                                                    ; let right = foldr compose_maps none ms
+                                                    ; if left == right && (and $ map (\x -> x == compose_maps x x) ms) then return right else Nothing
+                                                    }) perms
+                                ; return maps
+                                }
+{-
 eqh :: StdBraid -> Int -> Maybe ((Char,(Algebra,Algebra)),(Char,(Algebra,Algebra)))
 eqh b@(StdBraid _ ws) i = do
                             { let word = zipWith (\w x -> if w == i
@@ -58,12 +108,12 @@ relations :: StdBraid -> Maybe [DGA_Map]
 relations b@(StdBraid w _) = do
                                 { let basePoints = map head $ nub $ map sort $ map (bph b) [1..w]
                                 ; solutions <- mapM (eqh b) $ filter (\x -> not $ x `elem` basePoints) [1..w]
-                                ; let solution = map (\((c1,(a11,a12)),(c2,(a21,a22))) -> [(c1,a11),(c1,a12),(c2,a21),(c2,a22)]) solutions
-                                ; let splited = map (\x -> DGA_Map $ zipWith (\l x' -> l !! x') solution x) $ permutations [0..3]
-                                ; let theMap = nub $ map (\x -> compose_maps x x) splited
-                                ; return theMap
+                                ; let solution = catMaybes $ map (\((c1,(a11,a12)),(c2,(a21,a22))) -> if c2 == c1 then Nothing else Just [(c1,a11),(c1,a12),(c2,a21),(c2,a22)]) solutions
+                                ; let splited = map (\x -> compose_maps x x) $ map (\x -> DGA_Map $ zipWith (\l x' -> l !! x') solution x) $ permutations [0..3]
+                                ; let fixed = nub $ filter (\x -> x == (compose_maps x x)) splited
+                                ; return fixed
                                 }
-
+-}
 buildMaph :: Maybe [(Char,Algebra)] -> Maybe [(Char,Algebra)] -> Maybe [(Char,Algebra)]
 buildMaph m m'
     | m == m' = m
