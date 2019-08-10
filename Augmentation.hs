@@ -6,12 +6,16 @@ module Augmentation
     ,compose_maps
     ,applyDGAMap
     ,relations
+    ,relations'
     ,s
+    ,sChar
     ,pinch
     ,pinchMap
     ,pinchGraph
     ,getUniques
     ,numAugmentations
+    ,getAugs
+    ,numAugs
     ) where
 
 import Augmentation.DGA

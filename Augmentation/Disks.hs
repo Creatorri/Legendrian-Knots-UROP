@@ -148,8 +148,8 @@ augmentationDisks b p q
     | p > q = map (\(Script_M po ne) -> Script_M (reverse po) (reverse ne)) $ augmentationDisks b q p
     | otherwise = []
     where footprint = map (\(G x,i) -> (x, i)) $ algebra_footprint b
-          pth = snd $ fromJust $ find (\(c,_) -> c == E p) footprint
-          qth = snd $ fromJust $ find (\(c,_) -> c == E q) footprint
+          pth = snd $ fromJust $ Data.List.find (\(c,_) -> c == E p) footprint
+          qth = snd $ fromJust $ Data.List.find (\(c,_) -> c == E q) footprint
           foot' = zipWith (\c x -> (c,isCross b x)) footprint [0..((length footprint) -1)]
           lookupt :: [(FreeGroup,Bool)]
           lookupt = map (\((c,_),b) -> (c,b)) foot'

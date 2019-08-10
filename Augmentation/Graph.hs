@@ -2,6 +2,8 @@ module Augmentation.Graph
     (pinchGraph
     ,getUniques
     ,numAugmentations
+    ,getAugs
+    ,numAugs
     ) where
 
 import Algebra
@@ -33,21 +35,33 @@ pinchgraphh last i = let thisnext = map (\(m1,b1) ->
                          this = nub $ map (\(a,as) -> (a, catMaybes $ map (\s -> getnum next s) as)) thisnext
                       in trace ("LevelSize: " ++ show (length this)) $ Level this $ pinchgraphh next $ i-1
 
-pinchGraph :: StdBraid -> [LevelGraph (DGA_Map, AugBraid)]
-pinchGraph (StdBraid 0 _) = [nullGraph]
-pinchGraph (StdBraid _ []) = [nullGraph]
+pinchGraph :: StdBraid -> LevelGraph (DGA_Map, AugBraid)
+pinchGraph (StdBraid 0 _) = nullGraph
+pinchGraph (StdBraid _ []) = nullGraph
 pinchGraph b = let l = map (\x -> x-1) $ [1..(length $ get_word b)]
                    nodes = catMaybes $ map (\x -> pinchMap x $ fromStdBraid b) l
-                   rels = filter (\(DGA_Map x) -> not $ null x) $ fromJust $ relations b
-                   lg = Level [((DGA_Map [],fromStdBraid b),l)] $ pinchgraphh nodes (length l)
-                in lg:(map (\rel -> fmap (\(m1,b1) -> (compose_maps rel m1,b1)) lg) rels)
+                in Level [((DGA_Map [],fromStdBraid b),l)] $ pinchgraphh nodes (length l)
+
+getAugs :: StdBraid -> Maybe [Augmentation]
+getAugs b@(StdBraid _ w) = do
+                            { let dim = length w
+                            ; let chars = map sChar [1..dim]
+                            ; rel <- relations' b 
+                            ; let alph = map fst $ algebra_footprint b
+                            ; let lg = pinchGraph b
+                            ; ls <- mapM (\(DGA_Map l,_) -> mapM (\(c,a) -> (represent chars a) >>= (\r -> Just (c,r))) l) $ leaves lg
+                            ; let augs = map (\l -> Aug b $ map (\(c,vs) -> (c,map (\v -> rel #> v) vs)) l) ls
+                            ; return $ nub augs
+                            }
+numAugs :: StdBraid -> Int
+numAugs = maybe 0 length . getAugs
 
 getnum :: Eq a => [a] -> a -> Maybe Int
 getnum [] _ = Nothing
 getnum (a:as) t = if a == t then Just 1 else (return . (+) 1) =<< (getnum as t)
 
 getUniques :: StdBraid -> [[Algebra]]
-getUniques b = head $ sortBy (\a b -> compare (length a) (length b)) $ map (\lg -> nub $ map (\(m,b') -> (map (applyDGAMap m) $ map fst $ algebra_footprint b)) $ leaves lg) $ pinchGraph b
+getUniques b = {-head $ sortBy (\a b -> compare (length a) (length b)) $ map-} (\lg -> nub $ map (\(m,b') -> (map (applyDGAMap m) $ map fst $ algebra_footprint b)) $ leaves lg) $ pinchGraph b
 
 numAugmentations :: StdBraid -> Integer
 numAugmentations = (\n -> traceShow n n) . genericLength . getUniques

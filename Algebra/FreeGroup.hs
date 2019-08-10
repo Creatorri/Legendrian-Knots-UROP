@@ -1,6 +1,7 @@
 module Algebra.FreeGroup
     (FreeGroup (Id,E)
     ,groupPlugIn
+    ,toPseudoVector
     ) where
 
 import Algebra.Group
@@ -11,6 +12,21 @@ data FreeGroup = Id
         | E Char
         | FreeGroup :<>: FreeGroup
         | Recip FreeGroup
+
+toPseudoVector :: FreeGroup -> Maybe [(Char,Int)]
+toPseudoVector Id = Just []
+toPseudoVector (E c) = Just [(c,1)]
+toPseudoVector (Recip (E c)) = Just [(c,-1)]
+toPseudoVector (a :<>: b) = do
+                            { c1 <- toPseudoVector a
+                            ; c2 <- toPseudoVector b
+                            ; let f l1 l2 = if l1 == [] then l2 else if l2 == [] then l1 else
+                                            if (fst $ head l1) `elem` (map fst l2)
+                                                then f (tail l1) $ map (\(c,p) -> if c == (fst $ head l1) then (c,p+(snd $ head l1)) else (c,p)) l2
+                                                else f (tail l1) $ (head l1):l2
+                            ; return $ f c1 c2
+                            }
+toPseudoVector _ = Nothing
 
 primEq :: FreeGroup -> FreeGroup -> Bool
 primEq Id Id = True

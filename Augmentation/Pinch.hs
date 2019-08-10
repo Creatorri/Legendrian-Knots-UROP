@@ -72,7 +72,7 @@ pinchMap x b = do
             else if i == 0
                 then Nothing
                 else if k
-                    then case c0 of G (E c0') -> Just (c0',c0 + (sum $ map (\d -> (G $ (<>) cinv $ mconcat $ neg d)) $ augmentationDisks b changec c0'))
+                    then case c0 of G (E c0') -> Just (c0',c0 + (sum $ map (\d -> (G $ (Prelude.<>) cinv $ mconcat $ neg d)) $ augmentationDisks b changec c0'))
                                     _ -> Nothing
                     else Nothing
             ) (foot' :: [((Algebra,Int),Bool)])

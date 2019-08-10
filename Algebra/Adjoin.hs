@@ -1,6 +1,7 @@
 module Algebra.Adjoin
     (Adjoin (N,G)
     ,adjPlugIn
+    ,pairPlusChain
     ) where
 
 import Data.List
@@ -10,11 +11,11 @@ infixl 4 :+:
 infixl 5 :*:
 
 data Adjoin f g = N f
-             | G g
-             | (Adjoin f g) :+: (Adjoin f g)
-             | (Adjoin f g) :*: (Adjoin f g)
-             | Recip (Adjoin f g)
-             | Fail
+                | G g
+                | (Adjoin f g) :+: (Adjoin f g)
+                | (Adjoin f g) :*: (Adjoin f g)
+                | Recip (Adjoin f g)
+                | Fail
 
 plusChain :: (Eq a,Fractional a,Eq b, Group b) => Adjoin a b -> [Adjoin a b]
 plusChain (N a) = [N a]
@@ -24,6 +25,23 @@ plusChain (N 0 :*: _) = [N 0]
 plusChain m@(a :*: b) = [m]
 plusChain (Recip a) = [Recip a]
 plusChain (a :+: b) = (plusChain a) ++ (plusChain b)
+
+pairPlusChain :: (Eq a, Fractional a, Eq b, Group b) => Adjoin a b -> Maybe [(a,b)]
+pairPlusChain (N a) = Just [(a,mempty)]
+pairPlusChain (G a) = Just [(1,a)]
+pairPlusChain (Recip _) = Nothing
+pairPlusChain Fail = Nothing
+pairPlusChain (N 0 :*: _) = Just []
+pairPlusChain (_ :*: N 0) = Just []
+pairPlusChain (N a :*: G b) = Just [(a,b)]
+pairPlusChain (G a :*: N b) = Just [(b,a)]
+pairPlusChain (a :+: b) = do
+                            { c1 <- pairPlusChain a
+                            ; c2 <- pairPlusChain b
+                            ; return $ c1 ++ c2
+                            }
+pairPlusChain _ = Nothing
+
 instance (Show f,Show g) => Show (Adjoin f g) where
     show (N a) = show a
     show (G a) = show a

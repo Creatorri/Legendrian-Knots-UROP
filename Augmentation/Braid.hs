@@ -2,7 +2,9 @@
 module Augmentation.Braid
     (AugBraid (AugBraid)
     ,relations
+    ,sChar
     ,s
+    ,relations'
     ) where
 
 import Algebra
@@ -16,15 +18,25 @@ import Data.Maybe
 import Control.Monad
 import Data.Functor.Identity
 
+import Numeric.LinearAlgebra
+
 import Debug.Trace
 
-s :: Int -> Algebra
-s 0 = error "s 0"
-s k = G $ E $ toEnum $ (2*(k-1))+461
+sChar :: Int -> Char
+sChar 0 = error "s 0"
+sChar k = toEnum $ (2*k)+459
 
+invsChar :: Char -> Int
+invsChar c = if fromEnum c > 459 then (fromEnum c - 459) `div` 2 else error "invsChar: c out of bounds"
+
+s :: Int -> Algebra
+s = G . E . sChar
+{-
+sVec :: Int -> Vector R
+sVec i = i |> [if j == (i-1) then 1 else 0 | j <- [1..]]
+-}
 bph :: StdBraid -> Int -> [Int]
-bph b@(StdBraid k w) i = let i' = take k $ iterate (bphh w) i
-                          in nub $ sort i'
+bph b@(StdBraid k w) i = nub $ sort $ take k $ iterate (bphh w) i
 
 bphh :: [Int] -> Int -> Int
 bphh [] i = i
@@ -37,6 +49,53 @@ extractChar :: Algebra -> Maybe Char
 extractChar (G (E c)) = Just c
 extractChar e = Nothing
 
+sVec :: Int -> Int -> Vector Z
+sVec dim i = dim |> [toEnum $ if j == i then 1 else 0 | j <- [1..]]
+
+eqVec :: StdBraid -> Int -> Maybe (Vector Z)
+eqVec (StdBraid w ws) i = do
+                            { let dim = length ws
+                            ; let v = sum $ zipWith (\w x -> if w == i then sVec dim x else if w == (i-1) then negate $ sVec dim x else 0) ws [1..]
+                            ; if i > w then Nothing else Just v
+                            }
+
+relations' :: StdBraid -> Maybe (Matrix Z)
+relations' b@(StdBraid w ws) = do
+                                { let basePoints = map head $ nub $ map sort $ map (bph b) [1..w]
+                                ; let dim = length ws
+                                ; vs <- mapM (eqVec b) $ filter (\i -> not $ i `elem` basePoints) [1..w]
+                                ; let mat = fromColumns vs 
+                                ; let (q,_) = thinQR $ (fromZ mat :: Matrix R)
+                                ; let qqt = q Numeric.LinearAlgebra.<> (tr q)
+                                ; n <- (\(a,b) -> if a == b then Just a else Nothing) $ size qqt
+                                ; return $ fromColumns $ map (toZ . roundVector) $ toColumns $ 2 * ((ident n) - qqt)
+                                }
+
+{-
+addVec :: Vector R -> Vector R -> Vector R
+addVec v1 v2
+    | diff <  0 = addVec v2 v1
+    | diff == 0 = v1 + v2
+    | otherwise = v1 + (fromList $ toList v2 ++ zers)
+    where diff = (size v1) - (size v2)
+          zers = take diff repeat 0
+
+eqVec :: StdBraid -> Int -> Maybe (Vector R)
+eqVec (StdBraid w ws) i = do
+                            { let v = sum $ zipWith (\w x -> if w == i then sVec x else if w == (i-1) then negate $ sVec x else fromInteger 0) ws [1..]
+                            ; if i > w then Nothing else Just v
+                            }
+
+relations' :: StdBraid -> Maybe (Matrix R)
+relations' b@(StdBraid w ws) = do
+                                { let vecs = map (eqVec b) [1..w]
+                                ; dim <- if [V.length $ head vecs] == (nub $ map V.length vecs) then Just $ V.length $ head vecs else Nothing
+                                ; let mat = fmap fromIntegral $ M.transpose $ foldr (\x m -> (colVector x) <|> m) dim vecs
+                                ; let zer = zeros (nrows mat) (ncols mat)
+                                ; (_,l,p,_) <- luDecomp mat
+                                ; 
+                                    
+-}
 eqh :: StdBraid -> Int -> Maybe (DGA_Map,DGA_Map,DGA_Map,DGA_Map)
 eqh (StdBraid _ ws) i = do
                             { let word = zipWith (\w x ->
