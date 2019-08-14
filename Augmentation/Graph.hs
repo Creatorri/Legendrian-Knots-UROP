@@ -46,11 +46,11 @@ getAugs :: StdBraid -> Maybe [Augmentation]
 getAugs b@(StdBraid _ w) = do
                             { let dim = length w
                             ; let chars = map sChar [1..dim]
-                            ; rel <- relations' b 
+                            --; rel <- relations' b 
                             ; let alph = map fst $ algebra_footprint b
                             ; let lg = pinchGraph b
                             ; ls <- mapM (\(DGA_Map l,_) -> mapM (\(c,a) -> (represent chars a) >>= (\r -> Just (c,r))) l) $ leaves lg
-                            ; let augs = map (\l -> Aug b $ map (\(c,vs) -> (c,map (\v -> rel #> v) vs)) l) ls
+                            ; let augs = map (\l -> Aug b $ map (\(c,vs) -> (c,{-map (\v -> rel #> v)-} vs)) l) ls
                             ; return $ nub augs
                             }
 numAugs :: StdBraid -> Int

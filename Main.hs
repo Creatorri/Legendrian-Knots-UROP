@@ -40,9 +40,8 @@ outh [] _ = ""
 outh (x:xs) m = ((++) (show x ++ ": , ") $ foldr (\s ss -> (show s) ++ ", " ++ ss) "\n" $ map (numAug x) [1..m]) ++ (outh xs m)
 -}
 putInFile :: [Int] -> Int -> IO ()
-putInFile (i:is) n = do { let ks = map (numAug i) [1..n]
-                        ; mapM_ (\k -> appendFile "Data.csv" $ show k ++ ",") ks
-                        --; print ks
+putInFile (i:is) n = do { let ks = map (numAugs . genTorusBraid i) [1..n]
+                        ; mapM_ (\k -> (print k) >> (appendFile "Data.csv" $ show k ++ ",")) ks
                         ; appendFile "Data.csv" "\n"
                         ; putInFile is n
                         } 
@@ -62,7 +61,9 @@ zeros = zipWith (\(_,e1) (_,e2) -> e1 - e2) l1 l2
 
 main = do { print "Running" 
           ; appendFile "Data.csv" "\n"
-          ; putInFile [3,4] 6
+          --; let augs = numAugs $ genTorusBraid 3 3
+          --; appendFile "Data.csv" $ show augs
+          ; putInFile [2,3,4] 6
           --; mapM_ (fileperms 2) [1..5]
           --; mapM_ (fileperms 3) [1..5]
           --; mapM_ (fileperms 4) [1..3]

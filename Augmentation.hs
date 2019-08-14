@@ -3,8 +3,10 @@ module Augmentation
     ,augmentationDisks
     ,AugBraid (..)
     ,DGA_Map (..)
+    ,Augmentation (..)
     ,compose_maps
     ,applyDGAMap
+    ,fromDGAMap
     ,relations
     ,relations'
     ,s

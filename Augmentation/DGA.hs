@@ -4,6 +4,7 @@ module Augmentation.DGA
     ,applyDGAMap
     ,compose_maps
     ,Algebra
+    ,fromDGAMap
     ) where
 
 import Algebra
@@ -45,9 +46,11 @@ eqh l1 l2 = maybe False id $ do
             ; let mat mns = fromRows $ map (fromZ :: Vector Z -> Vector R) $ concat $ zipWith (\l (m,_) -> (permutations l) !! m) l1' mns
             ; let check m = maybe False id $ do
                             { let (l,_,p,s) = lu m
-                            ; let linv = inv l
+                            ; let (lR,lC) = size l
+                            ; let sq = abs $ lR - lC
+                            ; let linv = inv $ if lC == lR then l else if lC < lR then l ||| (konst 0 (lC,sq) === ident sq) else l === (konst 0 (sq,lR) ||| ident sq)
                             ; pinv <- if s == 0 then Nothing else return $ inv p
-                            ; let mat' = linv N.<> m2
+                            ; let mat' = pinv N.<> linv N.<> m2
                             ; let cond = isUpperTri mat'
                             ; let cond' = and $ map (\x -> (x - (fromIntegral $ floor x) < cutoff) || (((fromIntegral $ ceiling x) - x) < cutoff)) $ toList $ flatten mat'
                             ; return $ cond && cond'
@@ -55,6 +58,12 @@ eqh l1 l2 = maybe False id $ do
             ; let checkAll k mns = if size (mat mns) /= size m2 then False else if check $ mat mns then True else if k > ubound then False else checkAll (k+1) (suc mns)
             ; return $ checkAll 0 n0s
             }
+
+fromDGAMap :: StdBraid -> DGA_Map -> [Char] -> Maybe Augmentation
+fromDGAMap b (DGA_Map l) chars = do
+                                { l' <- mapM (\(c,a) -> (represent chars a) >>= (\vs -> return (c,vs))) l
+                                ; return $ Aug b l'
+                                }
 
 compose_maps :: DGA_Map -> DGA_Map -> DGA_Map
 compose_maps (DGA_Map map1) (DGA_Map map2) = DGA_Map $ (map (\(c,exp) -> (c,applyDGAMap (DGA_Map map2) exp)) map1) ++ (filter (\(c,_) -> not $ elem c $ map fst map1) map2)
