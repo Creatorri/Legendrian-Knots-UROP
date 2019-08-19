@@ -59,12 +59,12 @@ eqVec (StdBraid w ws) i = do
                             ; if i > w then Nothing else Just v
                             }
 
-relations' :: StdBraid -> Maybe (Matrix Z)
-relations' b@(StdBraid w ws) = do
+relations' :: StdBraid -> Matrix Z
+relations' b@(StdBraid w ws) = maybe (ident $ length ws) id $ do
                                 { let basePoints = map head $ nub $ map sort $ map (bph b) [1..w]
                                 ; let dim = length ws
                                 ; vs <- mapM (eqVec b) $ filter (\i -> not $ i `elem` basePoints) [1..w]
-                                ; let mat = fromColumns vs 
+                                ; mat <- if vs == [] then Nothing else Just $ fromColumns vs
                                 ; let (q,_) = thinQR $ (fromZ mat :: Matrix R)
                                 ; let qqt = q Numeric.LinearAlgebra.<> (tr q)
                                 ; n <- (\(a,b) -> if a == b then Just a else Nothing) $ size qqt

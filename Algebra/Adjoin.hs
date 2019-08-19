@@ -51,7 +51,7 @@ instance (Show f,Show g) => Show (Adjoin f g) where
 instance (Eq f,Eq g,Fractional f,Group g) => Eq (Adjoin f g) where
     Recip a == b = sieq (a * b) (N 1)
     a == Recip b = Recip b == a
-    a == b = sieq (a - b) (N 0)
+    a == b = (length $ plusChain a) == (length $ plusChain b) && sieq (a - b) (N 0)
 
 sieq :: (Eq f,Eq g,Fractional f,Group g) => Adjoin f g -> Adjoin f g -> Bool
 sieq (N a) (N b) = a == b

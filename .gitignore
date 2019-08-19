@@ -1,4 +1,5 @@
 bin/
+data/
 *.swp
 dist
 dist-*

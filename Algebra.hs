@@ -17,7 +17,19 @@ import Algebra.Z2
 import Numeric.LinearAlgebra as N
 
 type Algebra = Adjoin Z2 FreeGroup
+{--type Algegra' = [(Z2,Vector Z,FreeGroup)]
 
+plush :: (Z2,Vector Z,FreeGroup) -> Algebra' -> Algebra'
+plush e [] = [e]
+plush e1@(z1,v1,g1) (e2@(z2,v2,g2):ls) = if v1 == v2 && g1 == g2 then (if z1+z2 == 0 then (0,N.fromList $ map (\_ -> 0) $ N.tolist v1,mempty) else (z1+z2,v1,g1)):ls else e2:(plush e1 ls)
+
+instance Num Algebra' where
+    l1 + l2 = map (\e -> plush e l2) l1
+    l1 * l2 = sum $ map (\(z1,v1,g1) -> map (\(z2,v2,g2) -> (z1*z2,v1+v2,g1<>g2)) l2) l1
+    abs = map (\(z,v,g) -> (abs z,v,g))
+    signum = map (\(z,v,g) -> (signum z,v,g))
+--    fromInteger x = [(fromInteger x,
+-}
 cutoff :: R
 cutoff = 0.0000000001
 

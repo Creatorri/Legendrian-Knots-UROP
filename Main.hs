@@ -2,6 +2,7 @@ module Main
     (main
     ) where
 
+import qualified Conjecture as C
 import Libs.Graph
 import Augmentation.Braid
 import Augmentation
@@ -39,31 +40,44 @@ outh::[Int]->Int->IO ()
 outh [] _ = ""
 outh (x:xs) m = ((++) (show x ++ ": , ") $ foldr (\s ss -> (show s) ++ ", " ++ ss) "\n" $ map (numAug x) [1..m]) ++ (outh xs m)
 -}
+file = "data/NumAugs.csv"
+
 putInFile :: [Int] -> Int -> IO ()
-putInFile (i:is) n = do { let ks = map (numAugs . genTorusBraid i) [1..n]
-                        ; mapM_ (\k -> (print k) >> (appendFile "Data.csv" $ show k ++ ",")) ks
-                        ; appendFile "Data.csv" "\n"
+putInFile (i:is) n = do { let ks = map (getAugs . genTorusBraid i) [1..n]
+                        ; mapM_ (\k -> (print $ maybe 0 length k) >> (appendFile file $ show (maybe 0 length k) ++ ",")) ks
+                        ; appendFile file "\n"
                         ; putInFile is n
                         } 
+
+skrubAugs b@(StdBraid _ w) = do
+                            { let dim = length w
+                            ; let chars = map sChar [1..dim]
+                            --; let rel = relations' b 
+                            ; let alph = map fst $ algebra_footprint b
+                            ; let lg = pinchGraph b
+                            ; ls <- mapM (\(DGA_Map l,_) -> mapM (\(c,a) -> (represent chars a) >>= (\r -> Just (c,r))) l) $ leaves lg
+                            ; let augs = map (\l -> Aug b $ (\l -> filter (\v -> 1 == ((length $ filter (==v) l) `mod` 2)) $ nub l) $ map (\(c,vs) -> (c,{-map (\v -> rel #> v)-} vs)) l) ls
+                            ; return augs
+                            }
 
 numeach :: LevelGraph a -> [Int]
 numeach (Leaf as) = [length as]
 numeach (Level ans lg) = (length ans):(numeach lg)
 
-a = G $ E 'a'
-b = G $ E 'b'
-c = G $ E 'c'
-
-l1 = [('a',a+(recip b)),('b',b),('c',c+(recip a)+(recip b))]
-l2 = [('a',a+(recip b)+(recip c)),('b',b),('c',c+(recip b))]
-
-zeros = zipWith (\(_,e1) (_,e2) -> e1 - e2) l1 l2 
-
-main = do { print "Running" 
-          ; appendFile "Data.csv" "\n"
-          --; let augs = numAugs $ genTorusBraid 3 3
+main = do { print "Running"
+          ; C.main
+          --; let u = fromJust $ getAugs $ genTorusBraid 3 2
+          --; let v = fromJust $ getAugs $ genTorusBraid 2 3
+          --; mapM_ print u
+          --; print $ length u
+          --; mapM_ print v
+          --; print $ length v
+          ; appendFile file "\n"
+          --; print $ numAugs $ genTorusBraid 3 3
+          --; print $ numAugs $ genTorusBraid 3 2
+          --; print $ numAugs $ genTorusBraid 3 3
           --; appendFile "Data.csv" $ show augs
-          ; putInFile [2,3,4] 6
+          ; putInFile [2..5] 7
           --; mapM_ (fileperms 2) [1..5]
           --; mapM_ (fileperms 3) [1..5]
           --; mapM_ (fileperms 4) [1..3]
