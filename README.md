@@ -5,8 +5,8 @@ The other primary direction that this research may go is into how the algebraic 
 ## Goals
 The goal of this UROP is to, firstly, catch me up to speed with state-of-the-art research in contact topology, so that — secondly — I can choose between the aforementioned two primary directions. In the first, the objective would be to obtain a generalization of the work from [2] to (k,n) torus knots. In the second, the objective would be to find the relation between the augmentation and MCS for a space like ℤ, ℂ, or Mn(ℤ2).
 ## Compiling and Runing this project
-As of 7/12/19, the project can be compiled using the script "compileMain.bash" (must have ghc installed), and run using the  "runThreaded.bash" script.
-See commit history/Main.hs for what exactly will be run, as this is subject to rapid change.
+As of 8/19/19, assuming that stack is installed, the project can be compiled using "stack build" and run with "stack exec urop-exec".
+Check app/Main.hs to see what exactly will be run as this is subject to rapid change.
 ## References
 [1] John B. Etnyre, “Legendrian AND Transversal Knots”  arXiv:math/0306256v2 [math.SG] (2004)
 
