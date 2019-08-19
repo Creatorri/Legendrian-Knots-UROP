@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 887947ff4205ba85a3dcf88e4aa41ece7f6340f2e644b4d0af0601de9465d4fb
+-- hash: 7dc4dd0d5b123e381099b52cf6326e0e70fe1279e5fe4950dd66d0c6c0978033
 
 name:           urop
 version:        0.1.0.0
@@ -19,7 +19,6 @@ license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
-    ChangeLog.md
 
 source-repository head
   type: git
