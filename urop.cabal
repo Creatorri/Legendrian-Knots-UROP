@@ -1,0 +1,90 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 887947ff4205ba85a3dcf88e4aa41ece7f6340f2e644b4d0af0601de9465d4fb
+
+name:           urop
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/Creatorri/Legendrian-Knots-UROP/blob/master/README.md>
+homepage:       https://github.com/Creatorri/Legendrian-Knots-UROP#readme
+bug-reports:    https://github.com/Creatorri/Legendrian-Knots-UROP/issues
+author:         Creatorri
+maintainer:     Creatorri@users.noreply.github.com
+copyright:      2019 Creatorri
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/Creatorri/Legendrian-Knots-UROP
+
+library
+  exposed-modules:
+      Algebra
+      Algebra.Adjoin
+      Algebra.FreeGroup
+      Algebra.Group
+      Algebra.Z2
+      Augmentation
+      Augmentation.Braid
+      Augmentation.DGA
+      Augmentation.Disks
+      Augmentation.Graph
+      Augmentation.Pinch
+      Braid
+      Braid.Class
+      Braid.GenBraid
+      Conjecture
+      Libs.Graph
+      Libs.List
+  other-modules:
+      Paths_urop
+  hs-source-dirs:
+      src
+  build-depends:
+      MonadRandom >=0.5 && <0.6
+    , base >=4.12 && <5
+    , containers >=0.6 && <0.7
+    , hmatrix >=0.20 && <0.21
+    , safe >=0.3 && <0.4
+  default-language: Haskell2010
+
+executable urop-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_urop
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -optc-o3 -optc-ffast-math
+  build-depends:
+      MonadRandom >=0.5 && <0.6
+    , base >=4.12 && <5
+    , containers >=0.6 && <0.7
+    , hmatrix >=0.20 && <0.21
+    , safe >=0.3 && <0.4
+    , urop
+  default-language: Haskell2010
+
+test-suite urop-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_urop
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -optc-o3 -optc-ffast-math
+  build-depends:
+      MonadRandom >=0.5 && <0.6
+    , base >=4.12 && <5
+    , containers >=0.6 && <0.7
+    , hmatrix >=0.20 && <0.21
+    , safe >=0.3 && <0.4
+    , urop
+  default-language: Haskell2010

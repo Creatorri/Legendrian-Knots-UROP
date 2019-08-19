@@ -1,0 +1,58 @@
+name:                urop
+version:             0.1.0.0
+github:              "Creatorri/Legendrian-Knots-UROP"
+license:             BSD3
+author:              "Creatorri"
+maintainer:          "Creatorri@users.noreply.github.com"
+copyright:           "2019 Creatorri"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/Creatorri/Legendrian-Knots-UROP/blob/master/README.md>
+
+dependencies:
+- base >= 4.12 && < 5
+- safe >= 0.3 && < 0.4
+- containers >= 0.6 && < 0.7
+- hmatrix >= 0.20 && < 0.21
+- MonadRandom >= 0.5 && < 0.6
+
+library:
+  source-dirs: src
+
+executables:
+  urop-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -O2
+    - -optc-o3
+    - -optc-ffast-math
+    dependencies:
+    - urop
+
+tests:
+  urop-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -O2
+    - -optc-o3
+    - -optc-ffast-math
+    dependencies:
+    - urop
