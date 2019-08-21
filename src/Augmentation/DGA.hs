@@ -24,7 +24,7 @@ data Augmentation = Aug StdBraid [(Char,[Vector Z])]
 instance Show Augmentation where
     show (Aug b m) = (show b) ++ "\n" ++ (concat $ map (\(c,vs) -> [c] ++ "→" ++ (foldr (\x xs -> show x ++ if xs == "" then "" else "+"++xs) "" vs) ++ " ") m)
 instance Eq Augmentation where
-    (Aug b1 m1) == (Aug b2 m2) = b1 == b2 && inZ2 m1 == inZ2 m2 && eqh m1 m2
+    (Aug b1 m1) == (Aug b2 m2) = b1 == b2 && inZ2 m1 == inZ2 m2 && (m1 == m2 || eqh m1 m2)
 
 inZ2 :: [(Char,[Vector Z])] -> [(Char,Z2)]
 inZ2 = map (\(c,vs) -> (c,sum $ map (\_ -> fromInteger 1) vs))

@@ -1,7 +1,7 @@
 module Conjecture
-    (main
-    --,pathMatrix
-    --,isAug
+    ( orderPinch
+    , ordCon
+    , ordTest
     ) where
 
 import Braid
@@ -33,8 +33,7 @@ orderPinch :: StdBraid -> [Int] -> Maybe Augmentation
 orderPinch b@(StdBraid _ ws) perm = (orderPinchh (fromStdBraid b) perm) >>= \m -> fromDGAMap b m (map sChar [1..(length ws)])
 
 orderPinchh :: AugBraid -> [Int] -> Maybe DGA_Map
-orderPinchh b@(AugBraid w _) [] = Just $ DGA_Map []--if w == 0 then Just $ DGA_Map [] else Nothing
---orderPinchh b@(AugBraid 0 _) perm = if perm == [] then Just $ DGA_Map [] else Nothing
+orderPinchh b@(AugBraid w _) [] = Just $ DGA_Map []
 orderPinchh b (p:per) = do
                         { (m,b') <- pinchMap (p-1) b
                         ; m' <- orderPinchh b' $ map (\p' -> if p' > p then p'-1 else p') per
@@ -61,7 +60,7 @@ ordCon :: StdBraid -> [((Perm,Perm),Bool)]
 ordCon b@(StdBraid _ ws) = let perms = permutations [1..(length ws)]
                                nocos = noncobound b
                                pairs = nubBy (\(h,i) (j,k) -> (==2) $ length $ nub [h,i,j,k]) $ concat $ map (\p -> map (\no -> (p,phi no p)) nocos) perms
-                            in map (\(p1,p2) -> (\bool -> ((p1,p2),bool)) $ maybe False id $ do 
+                            in map (\(p1,p2) -> (\bool -> ((p1,p2), bool)) $ maybe (trace "Failed" False) id $ do 
                                                                 { a1 <- orderPinch b p1
                                                                 ; a2 <- orderPinch b p2
                                                                 ; return $ a1 == a2
@@ -72,13 +71,3 @@ ordTest w l = do
             { b <- genRandPosBraid w l
             ; return (b,map fst $ filter (\(_,bool) -> not bool) $ ordCon b)
             }
-
-main = do
-        { putStrLn "phi isotopy conjecture"
-        ; print $ map fst $ filter (\(_,b) -> not b) $ ordCon $ genTorusBraid 3 2
-        --; bools <- mapM (\w -> mapM (\l -> mapM (\_ -> evalRandIO $ ordTest w l) [1..10]) [2..10]) [2..5]
-        --; mapM_ print $ map fst $ filter (\(_,l) -> l /= []) $ concat $ concat $ bools
-        --; print $ ordConj $ StdBraid 3 [1,2,1]
-        --; bools <- mapM (\i -> mapM (\w -> mapM (\l -> (evalRandIO $ ordTest w l)) [3..5]) [3..]) [1]
-        --; mapM_ print $ map fst $ filter (\(_,b) -> not b) $ concat $ concat bools
-        }
